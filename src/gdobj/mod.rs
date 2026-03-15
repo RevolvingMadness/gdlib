@@ -18,6 +18,7 @@ use crate::gdobj::{
 use itoa;
 use smallvec::SmallVec;
 
+pub mod defaults;
 pub mod ids;
 pub mod lookup;
 pub mod misc;
@@ -1035,6 +1036,11 @@ impl GDObject {
             config: config.clone(),
             properties,
         }
+    }
+
+    #[inline]
+    pub fn from_id(id: i32) -> Self {
+        defaults::default_object(id)
     }
 
     pub fn get_property(&self, p: u16) -> Option<GDValue> {
