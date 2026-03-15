@@ -90,7 +90,7 @@ fn main() {
             .unwrap();
         } else {
             if line.starts_with(
-                "pub const PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map!",
+                "pub static PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map!",
             ) {
                 seen_map = true;
             }

@@ -1,5 +1,7 @@
 use phf::{Map, phf_map};
 
+use crate::gdobj::GDObjConfig;
+
 use super::GDObject;
 
 /// Maps object IDs to their default GD object strings (as the editor would produce them).
@@ -4085,13 +4087,8 @@ pub static OBJECT_DEFAULTS: Map<i32, &'static str> = phf_map! {
 /// If the ID has a known entry in [`OBJECT_DEFAULTS`], it is parsed from that string.
 /// Otherwise a minimal default string `"1,<id>,2,0,3,0;"` is used as the fallback.
 pub fn default_object(id: i32) -> GDObject {
-    let s: String;
-    let default_str: &str = match OBJECT_DEFAULTS.get(&id) {
-        Some(s) => s,
-        None => {
-            s = format!("1,{id},2,0,3,0;");
-            &s
-        }
-    };
-    GDObject::parse_str(default_str)
+    match OBJECT_DEFAULTS.get(&id) {
+        Some(s) => GDObject::parse_str(s),
+        None => GDObject::new(id, &GDObjConfig::default(), vec![]),
+    }
 }

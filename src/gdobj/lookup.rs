@@ -8,7 +8,7 @@ use crate::gdobj::GDObjPropType;
 /// (property, name)  
 ///
 /// Reference: <https://flowvix.github.io/gd-info-explorer/props>
-pub const PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map! {
+pub static PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map! {
     1u16 => ("object ID", GDObjPropType::Int),
     2u16 => ("x pos", GDObjPropType::Float),
     3u16 => ("y pos", GDObjPropType::Float),

@@ -196,7 +196,7 @@ impl ZLayer {
 /// Enum for colour channels and their IDs
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum ColourChannel {
-    Channel(i32),
+    Channel(i16),
     Background,
     Ground1,
     Ground2,
@@ -211,7 +211,7 @@ pub enum ColourChannel {
 }
 
 impl ColourChannel {
-    pub fn as_i32(&self) -> i32 {
+    pub fn to_int(&self) -> i16 {
         match self {
             Self::Background => 1000,
             Self::Channel(n) => *n,
@@ -227,7 +227,7 @@ impl ColourChannel {
         }
     }
 
-    pub fn from_i32(c: i32) -> Self {
+    pub fn from_int(c: i16) -> Self {
         match c {
             1000 => Self::Background,
             1001 => Self::Ground1,
@@ -298,9 +298,26 @@ impl MoveEasing {
 
 const LIST_ALLOCSIZE: usize = 5;
 
+/// Enum for all values represented by Geometry Dash.
+/// All values are parsed according to their specified [`GDObjPropType`].
+/// * `Int`: Any 32-bit signed integer. Fallback for ints.
+/// * `Short`: Any 16-bit signed integer.
+/// * `Float`: Any 64-bit signed float.
+/// * `Bool`: Any boolean.
+/// * `Toggle`: Any option that can be a boolean state or not selected. It is serialised as -1 instead of 0 if false.
+/// * `Group`: Any group, which is represented by an `i16`.
+/// * `Item`: Any item ID, whcih is represented by an `i16`.
+/// * `GroupList`: A list of group IDs as i16, which is stored in a SmallVec.
+/// * `ProbabilitiesList`: A list of probability pairs: (group id, relative chance). Used in the advanced random trigger
+/// * `Easing`: A variant of the [`MoveEasing`] enum.
+/// * `ColourChannel`: A [`ColourChannel`]. It may be any of the built in ones, or one with an ID in the range of [1, 999]
+/// * `ZLayer`: A variant of the [`ZLayer`] enum.
+/// * `Events`: A list of [`Event`]s. Used in the event trigger.
+/// * `String`: A UTF-8 string. The fallback for any value that did not fit any of the aforementioned criteria.
 #[derive(Debug, Clone, PartialEq)]
 pub enum GDValue {
     Int(i32),
+    Short(i16),
     Float(f64),
     Bool(bool),
     Toggle(bool),
@@ -526,22 +543,20 @@ impl GDValue {
         match t {
             GDObjPropType::Bool => Self::Bool(s == "1"),
             GDObjPropType::Toggle => Self::Toggle(s == "1"),
-            GDObjPropType::ColourChannel => Self::ColourChannel(ColourChannel::from_i32(
-                s.parse::<i32>().unwrap_or_default(),
-            )),
-            GDObjPropType::Easing => {
-                Self::Easing(MoveEasing::from_i32(s.parse::<i32>().unwrap_or_default()))
+            GDObjPropType::ColourChannel => {
+                Self::ColourChannel(ColourChannel::from_int(parse!(s => i16)))
             }
-            GDObjPropType::Float => Self::Float(s.parse::<f64>().unwrap_or_default()),
-            GDObjPropType::Int => Self::Int(s.parse::<i32>().unwrap_or_default()),
+            GDObjPropType::Easing => Self::Easing(MoveEasing::from_i32(parse!(s => i32))),
+            GDObjPropType::Float => Self::Float(parse!(s => f64)),
+            GDObjPropType::Int => Self::Int(parse!(s => i32)),
             GDObjPropType::EventsList => Self::Events(
                 s.split('.')
                     .into_iter()
                     .map(|i| Event::from_i32(parse!(i => i32)))
                     .collect(),
             ),
-            GDObjPropType::Group => Self::Group(s.parse::<i16>().unwrap_or_default()),
-            GDObjPropType::Item => Self::Item(s.parse::<i16>().unwrap_or_default()),
+            GDObjPropType::Group => Self::Group(parse!(s => i16)),
+            GDObjPropType::Item => Self::Item(parse!(s => i16)),
             GDObjPropType::Text | GDObjPropType::Unknown => Self::String(s.to_owned()),
         }
     }
@@ -570,7 +585,7 @@ impl GDValue {
 
     #[inline(always)]
     pub fn colour_channel(s: &str) -> Self {
-        Self::ColourChannel(ColourChannel::from_i32(s.parse().unwrap_or(0)))
+        Self::ColourChannel(ColourChannel::from_int(s.parse().unwrap_or(0)))
     }
 
     #[inline(always)]
@@ -625,13 +640,14 @@ impl Display for GDValue {
                     false => "-1",
                 }
             ),
-            GDValue::ColourChannel(v) => write!(f, "{}", i_buf.format(v.as_i32())),
+            GDValue::ColourChannel(v) => write!(f, "{}", i_buf.format(v.to_int())),
             GDValue::Easing(v) => write!(f, "{}", i_buf.format(*v as i32)),
             GDValue::Float(v) => write!(f, "{}", d_buf.format(*v)),
             GDValue::Group(v) | GDValue::Item(v) => write!(f, "{}", i_buf.format(*v)),
             GDValue::GroupList(v) => write!(f, "{}", fmt_intlist!(v, i_buf)),
             GDValue::ProbabilitiesList(v) => write!(f, "{}", fmt_inttuples!(v, i_buf)),
             GDValue::Int(v) => write!(f, "{}", i_buf.format(*v)),
+            GDValue::Short(v) => write!(f, "{}", i_buf.format(*v)),
             GDValue::String(v) => write!(f, "{v}"),
             GDValue::ZLayer(v) => write!(f, "{}", i_buf.format(*v as i32)),
             GDValue::Events(evts) => write!(f, "{}", fmt_intlist!(evts, i_buf)),
@@ -901,10 +917,10 @@ impl GDObject {
                 EDITOR_LAYER_1 => obj.config.editor_layers.0 = val.parse().unwrap_or(0),
                 EDITOR_LAYER_2 => obj.config.editor_layers.1 = val.parse().unwrap_or(0),
                 OBJECT_COLOUR => {
-                    obj.config.colour_channels.0 = ColourChannel::from_i32(val.parse().unwrap_or(0))
+                    obj.config.colour_channels.0 = ColourChannel::from_int(val.parse().unwrap_or(0))
                 }
                 SECONDARY_COLOUR => {
-                    obj.config.colour_channels.1 = ColourChannel::from_i32(val.parse().unwrap_or(0))
+                    obj.config.colour_channels.1 = ColourChannel::from_int(val.parse().unwrap_or(0))
                 }
                 Z_LAYER => obj.config.z_layer = ZLayer::from_i32(val.parse().unwrap_or(0)),
                 Z_ORDER => obj.config.z_order = val.parse().unwrap_or(0),
@@ -1056,14 +1072,14 @@ impl GDObject {
             87 => Some(GDValue::Bool(self.config.trigger_cfg.multitriggerable)),
             128 => Some(GDValue::Float(self.config.scale.0)),
             129 => Some(GDValue::Float(self.config.scale.1)),
-            20 => Some(GDValue::Int(self.config.editor_layers.0)),
-            61 => Some(GDValue::Int(self.config.editor_layers.1)),
-            21 => Some(GDValue::Int(self.config.colour_channels.0.as_i32())),
-            22 => Some(GDValue::Int(self.config.colour_channels.1.as_i32())),
+            20 => Some(GDValue::Short(self.config.editor_layers.0)),
+            61 => Some(GDValue::Short(self.config.editor_layers.1)),
+            21 => Some(GDValue::Short(self.config.colour_channels.0.to_int())),
+            22 => Some(GDValue::Short(self.config.colour_channels.1.to_int())),
             24 => Some(GDValue::ZLayer(self.config.z_layer)),
             25 => Some(GDValue::Int(self.config.z_order)),
-            343 => Some(GDValue::Int(self.config.enter_effect_channel)),
-            446 => Some(GDValue::Int(self.config.material_id)),
+            343 => Some(GDValue::Short(self.config.enter_effect_channel)),
+            446 => Some(GDValue::Short(self.config.material_id)),
             64 => Some(GDValue::Bool(self.config.attributes.dont_fade)),
             67 => Some(GDValue::Bool(self.config.attributes.dont_enter)),
             116 => Some(GDValue::Bool(self.config.attributes.no_effects)),
@@ -1088,7 +1104,7 @@ impl GDObject {
             284 => Some(GDValue::Bool(self.config.attributes.single_ptouch)),
             369 => Some(GDValue::Bool(self.config.attributes.center_effect)),
             117 => Some(GDValue::Bool(self.config.attributes.reverse)),
-            534 => Some(GDValue::Int(self.config.control_id)),
+            534 => Some(GDValue::Short(self.config.control_id)),
             _ => self
                 .properties
                 .iter()
@@ -1106,7 +1122,7 @@ impl GDObject {
 /// * is touch triggerable?
 /// * is spawn triggerable?
 /// * is multitriggerable?
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct TriggerConfig {
     pub touchable: bool,
     pub spawnable: bool,
@@ -1182,11 +1198,11 @@ pub struct GDObjConfig {
     pub trigger_cfg: TriggerConfig,
     pub z_order: i32,
     pub z_layer: ZLayer,
-    pub editor_layers: (i32, i32),
+    pub editor_layers: (i16, i16),
     pub colour_channels: (ColourChannel, ColourChannel),
-    pub enter_effect_channel: i32,
-    pub material_id: i32,
-    pub control_id: i32,
+    pub enter_effect_channel: i16,
+    pub material_id: i16,
+    pub control_id: i16,
     pub attributes: GDObjAttributes,
 }
 
@@ -1259,25 +1275,26 @@ impl GDObjConfig {
             &mut properties,
         );
 
-        // i32
+        // i16
         serialise_fields(
             &[
                 ("20", self.editor_layers.0, 0),
                 ("61", self.editor_layers.1, 0),
                 (
                     "21",
-                    self.colour_channels.0.as_i32(),
-                    ColourChannel::Object.as_i32(),
+                    self.colour_channels.0.to_int(),
+                    ColourChannel::Object.to_int(),
                 ),
-                ("22", self.colour_channels.1.as_i32(), 1),
-                ("24", self.z_layer as i32, ZLayer::T1 as i32),
-                ("25", self.z_order, 0),
+                ("22", self.colour_channels.1.to_int(), 1),
+                ("24", self.z_layer as i16, ZLayer::T1 as i16),
                 ("343", self.enter_effect_channel, 0),
                 ("446", self.material_id, 0),
                 ("534", self.control_id, 0),
             ],
             &mut properties,
         );
+
+        serialise_fields(&[("25", self.z_order, 0)], &mut properties);
 
         if !self.groups.is_empty() {
             properties.push_str(",57,");
@@ -1325,6 +1342,11 @@ impl GDObjConfig {
             self.groups.swap_remove(idx);
         }
     }
+    /// Clears all groups from this object
+    #[inline(always)]
+    pub fn clear_groups(&mut self) {
+        self.groups.clear();
+    }
     /// Sets x position of this object
     #[inline(always)]
     pub fn x(mut self, x: f64) -> Self {
@@ -1339,9 +1361,10 @@ impl GDObjConfig {
     }
 
     /// Applies a translation to this object's position
-    pub fn translate(&mut self, x: f64, y: f64) {
+    pub fn translate(mut self, x: f64, y: f64) -> Self {
         self.pos.0 += x;
         self.pos.1 += y;
+        self
     }
 
     /// Sets x and y position of this object
@@ -1418,31 +1441,31 @@ impl GDObjConfig {
     }
     /// Sets editor layer 1 of this object
     #[inline(always)]
-    pub fn editor_layer_1(mut self, l: i32) -> Self {
+    pub fn editor_layer_1(mut self, l: i16) -> Self {
         self.editor_layers.0 = l;
         self
     }
     /// Sets editor layer 2 of this object
     #[inline(always)]
-    pub fn editor_layer_2(mut self, l: i32) -> Self {
+    pub fn editor_layer_2(mut self, l: i16) -> Self {
         self.editor_layers.1 = l;
         self
     }
     /// Sets this object's material id
     #[inline(always)]
-    pub fn set_material_id(mut self, material_id: i32) -> Self {
+    pub fn set_material_id(mut self, material_id: i16) -> Self {
         self.material_id = material_id;
         self
     }
     /// Sets this object's enter effect channel
     #[inline(always)]
-    pub fn set_enter_channel(mut self, channel: i32) -> Self {
+    pub fn set_enter_channel(mut self, channel: i16) -> Self {
         self.enter_effect_channel = channel;
         self
     }
     /// Sets this object's control ID
     #[inline(always)]
-    pub fn set_control_id(mut self, id: i32) -> Self {
+    pub fn set_control_id(mut self, id: i16) -> Self {
         self.control_id = id;
         self
     }
@@ -1620,7 +1643,7 @@ impl GDObjConfig {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct GDObjAttributes {
     pub dont_fade: bool,
     pub dont_enter: bool,

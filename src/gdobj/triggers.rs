@@ -152,6 +152,39 @@ pub enum CompareOp {
     NotEquals = 5,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct CompareOperand {
+    pub operand_item: Item,
+    pub modifier: f64,
+    pub mod_op: Op,
+    pub rounding: RoundMode,
+    pub sign: SignMode,
+}
+
+impl CompareOperand {
+    pub fn number_literal(num: f64) -> Self {
+        Self {
+            operand_item: Item::Counter(0),
+            modifier: num,
+            mod_op: Op::Mul,
+            rounding: RoundMode::None,
+            sign: SignMode::None,
+        }
+    }
+}
+
+impl From<Item> for CompareOperand {
+    fn from(value: Item) -> Self {
+        Self {
+            operand_item: value,
+            modifier: 1.0,
+            mod_op: Op::Mul,
+            rounding: RoundMode::None,
+            sign: SignMode::None,
+        }
+    }
+}
+
 /// Enum for item round modes
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -557,7 +590,7 @@ pub fn colour_trigger(
         (DURATION_GROUP_TRIGGER_CHANCE, GDValue::Float(fade_time)),
         (USING_PLAYER_COLOUR_1, GDValue::Bool(use_player_col_1)),
         (USING_PLAYER_COLOUR_2, GDValue::Bool(use_player_col_2)),
-        (COLOUR_CHANNEL, GDValue::Int(channel.as_i32())),
+        (COLOUR_CHANNEL, GDValue::Short(channel.to_int())),
         (OPACITY, GDValue::Float(opacity)),
         (BLENDING_ENABLED, GDValue::Bool(blending)),
     ];
@@ -1076,39 +1109,6 @@ pub fn item_edit(
     }
 
     GDObject::new(TRIGGER_ITEM_EDIT, config, properties)
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct CompareOperand {
-    pub operand_item: Item,
-    pub modifier: f64,
-    pub mod_op: Op,
-    pub rounding: RoundMode,
-    pub sign: SignMode,
-}
-
-impl CompareOperand {
-    pub fn number_literal(num: f64) -> Self {
-        Self {
-            operand_item: Item::Counter(0),
-            modifier: num,
-            mod_op: Op::Mul,
-            rounding: RoundMode::None,
-            sign: SignMode::None,
-        }
-    }
-}
-
-impl From<Item> for CompareOperand {
-    fn from(value: Item) -> Self {
-        Self {
-            operand_item: value,
-            modifier: 1.0,
-            mod_op: Op::Mul,
-            rounding: RoundMode::None,
-            sign: SignMode::None,
-        }
-    }
 }
 
 /// Returns an item compare trigger
