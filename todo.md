@@ -8,8 +8,8 @@
     - `shorthand`: shorthand constructors
         - on by default
 - release v0.3.1 on github
-- link github repo to crates.io 
 - add proper benchmarks
-- add github topics to repo
 - fix build script incorrectly generating file on docs.rs
 - gdobjattributes as bitflags optimization
+- put object map inside of lookup.rs
+- finish fixing crate according to cargo clippy lint

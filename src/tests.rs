@@ -1,3 +1,4 @@
+//! Unit tests for the crate
 use std::time::Instant;
 
 use crate::{
@@ -154,6 +155,6 @@ fn event_trigger_test() {
         123,
         vec![Event::BallSwitch, Event::FallSpeedLow],
         0,
-        crate::gdobj::ExtraID2::All,
+        triggers::ExtraID2::All,
     ));
 }

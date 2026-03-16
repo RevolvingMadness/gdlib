@@ -25,6 +25,9 @@ pub mod misc;
 pub mod triggers;
 
 pub mod animation_ids {
+    #![allow(missing_docs)]
+
+    /// Animations for the big beast (chomper)
     #[repr(i32)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum BigBeast {
@@ -33,6 +36,8 @@ pub mod animation_ids {
         Attack01End = 2,
         Idle01 = 3,
     }
+
+    /// Animations for the bat
     #[repr(i32)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum Bat {
@@ -47,6 +52,8 @@ pub mod animation_ids {
         SleepEnd = 8,
         Attack02Loop = 9,
     }
+
+    /// Animations for the spike ball
     #[repr(i32)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum Spikeball {
@@ -63,25 +70,32 @@ pub mod animation_ids {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Enum for animation IDs
 pub enum Anim {
+    /// User-specified animation
     Other(i32),
+    /// Built-ins for the big beast (chomper)
     BigBeast(animation_ids::BigBeast),
+    /// Built-ins for the bat
     Bat(animation_ids::Bat),
+    /// Built-ins for the spike ball
     Spikeball(animation_ids::Spikeball),
 }
 
-impl Anim {
-    pub fn as_i32(&self) -> i32 {
-        match self {
-            Self::Bat(b) => *b as i32,
-            Self::BigBeast(b) => *b as i32,
-            Self::Spikeball(s) => *s as i32,
-            Self::Other(i) => *i,
+impl From<Anim> for i32 {
+    fn from(value: Anim) -> i32 {
+        match value {
+            Anim::Bat(b) => b as i32,
+            Anim::BigBeast(b) => b as i32,
+            Anim::Spikeball(s) => s as i32,
+            Anim::Other(i) => i,
         }
     }
 }
 
+/// In-level value container. Used in such triggers as item edit, item compare and item persisent
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum Item {
     Counter(i16),
     Timer(i16),
@@ -91,6 +105,7 @@ pub enum Item {
 }
 
 impl Item {
+    /// Returns this item's type
     pub fn get_type(&self) -> ItemType {
         match self {
             Self::Attempts => ItemType::Attempts,
@@ -100,9 +115,12 @@ impl Item {
             Self::Timer(_) => ItemType::Timer,
         }
     }
+    #[inline(always)]
+    /// Returns this item's type as an i32
     pub fn get_type_as_i32(&self) -> i32 {
         self.get_type() as i32
     }
+    /// Returns this item's special mode if it has one
     pub fn as_special_mode(&self) -> Option<CounterMode> {
         match self {
             Self::Attempts => Some(CounterMode::Attempts),
@@ -111,10 +129,13 @@ impl Item {
             _ => None,
         }
     }
+    #[inline(always)]
+    /// Returns this item's special mode if it has one as an i32
     pub fn as_special_mode_i32(&self) -> i32 {
         self.as_special_mode().unwrap() as i32
     }
 
+    /// Returns this item's ID
     pub fn id(&self) -> i16 {
         match self {
             Self::Counter(c) => *c,
@@ -127,6 +148,7 @@ impl Item {
 /// Enum for counter types
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum ItemType {
     Counter = 1,
     Timer = 2,
@@ -138,14 +160,17 @@ pub enum ItemType {
 /// Enum for counter modes
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum CounterMode {
     Attempts = -3,
     Points = -2,
     MainTime = -1,
 }
 
+/// Corresponding types for [`GDValue`]s.
 #[repr(u8)]
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Copy)]
+#[allow(missing_docs)]
 pub enum GDObjPropType {
     Int,
     Float,
@@ -162,6 +187,7 @@ pub enum GDObjPropType {
 
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[allow(missing_docs)]
 pub enum ZLayer {
     B5 = -5,
     B4 = -3,
@@ -176,8 +202,8 @@ pub enum ZLayer {
     T4 = 11,
 }
 
-impl ZLayer {
-    pub fn from_i32(int: i32) -> Self {
+impl From<i32> for ZLayer {
+    fn from(int: i32) -> Self {
         match int {
             -5 => Self::B5,
             -3 => Self::B4,
@@ -195,6 +221,7 @@ impl ZLayer {
 
 /// Enum for colour channels and their IDs
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[allow(missing_docs)]
 pub enum ColourChannel {
     Channel(i16),
     Background,
@@ -210,24 +237,8 @@ pub enum ColourChannel {
     P2,
 }
 
-impl ColourChannel {
-    pub fn to_int(&self) -> i16 {
-        match self {
-            Self::Background => 1000,
-            Self::Channel(n) => *n,
-            Self::Ground1 => 1001,
-            Self::Ground2 => 1009,
-            Self::Line => 1002,
-            Self::Object => 1004,
-            Self::ThreeDLine => 1003,
-            Self::MiddleGround => 1013,
-            Self::MiddleGround2 => 1014,
-            Self::P1 => 1005,
-            Self::P2 => 1006,
-        }
-    }
-
-    pub fn from_int(c: i16) -> Self {
+impl From<i16> for ColourChannel {
+    fn from(c: i16) -> Self {
         match c {
             1000 => Self::Background,
             1001 => Self::Ground1,
@@ -244,9 +255,28 @@ impl ColourChannel {
     }
 }
 
-/// Enum for all the move easings
+impl From<ColourChannel> for i16 {
+    fn from(value: ColourChannel) -> Self {
+        match value {
+            ColourChannel::Channel(n) => n,
+            ColourChannel::Background => 1000,
+            ColourChannel::Ground1 => 1001,
+            ColourChannel::Ground2 => 1009,
+            ColourChannel::Line => 1002,
+            ColourChannel::Object => 1004,
+            ColourChannel::ThreeDLine => 1003,
+            ColourChannel::MiddleGround => 1013,
+            ColourChannel::MiddleGround2 => 1014,
+            ColourChannel::P1 => 1005,
+            ColourChannel::P2 => 1006,
+        }
+    }
+}
+
+/// Enum for all of the move easings
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[allow(missing_docs)]
 pub enum MoveEasing {
     #[default]
     None = 0,
@@ -270,8 +300,8 @@ pub enum MoveEasing {
     BackOut = 18,
 }
 
-impl MoveEasing {
-    pub fn from_i32(i: i32) -> Self {
+impl From<i32> for MoveEasing {
+    fn from(i: i32) -> Self {
         match i {
             1 => Self::EaseInOut,
             2 => Self::EaseIn,
@@ -300,40 +330,42 @@ const LIST_ALLOCSIZE: usize = 5;
 
 /// Enum for all values represented by Geometry Dash.
 /// All values are parsed according to their specified [`GDObjPropType`].
-/// * `Int`: Any 32-bit signed integer. Fallback for ints.
-/// * `Short`: Any 16-bit signed integer.
-/// * `Float`: Any 64-bit signed float.
-/// * `Bool`: Any boolean.
-/// * `Toggle`: Any option that can be a boolean state or not selected. It is serialised as -1 instead of 0 if false.
-/// * `Group`: Any group, which is represented by an `i16`.
-/// * `Item`: Any item ID, whcih is represented by an `i16`.
-/// * `GroupList`: A list of group IDs as i16, which is stored in a SmallVec.
-/// * `ProbabilitiesList`: A list of probability pairs: (group id, relative chance). Used in the advanced random trigger
-/// * `Easing`: A variant of the [`MoveEasing`] enum.
-/// * `ColourChannel`: A [`ColourChannel`]. It may be any of the built in ones, or one with an ID in the range of [1, 999]
-/// * `ZLayer`: A variant of the [`ZLayer`] enum.
-/// * `Events`: A list of [`Event`]s. Used in the event trigger.
-/// * `String`: A UTF-8 string. The fallback for any value that did not fit any of the aforementioned criteria.
 #[derive(Debug, Clone, PartialEq)]
 pub enum GDValue {
+    /// Any 32-bit signed integer. Fallback for ints.
     Int(i32),
+    /// Any 16-bit signed integer.
     Short(i16),
+    /// Any 64-bit signed float.
     Float(f64),
+    /// Any boolean.
     Bool(bool),
+    /// Alternative boolean form. It is serialised as -1 instead of 0 if false.
     Toggle(bool),
+    /// Any group, which is represented by an `i16`.
     Group(i16),
+    /// Any item ID, whcih is represented by an `i16`.
     Item(i16),
+    /// A list of group IDs as i16, which is stored in a SmallVec.
     GroupList(smallvec::SmallVec<[i16; LIST_ALLOCSIZE]>),
+    /// A list of probability pairs: (group id, relative chance). Used in the advanced random trigger
     ProbabilitiesList(smallvec::SmallVec<[(i16, i32); LIST_ALLOCSIZE]>),
+    /// A [`MoveEasing`].
     Easing(MoveEasing),
+    /// A [`ColourChannel`]. It may be any of the built in ones, or one with an ID in the range of [1, 999]
     ColourChannel(ColourChannel),
+    /// A [`ZLayer`].
     ZLayer(ZLayer),
+    /// A list of [`Event`]s. Used in the event trigger.
     Events(Vec<Event>),
+    /// A UTF-8 string. The fallback for any value that did not fit any of the aforementioned criteria.
     String(String), // fallback
 }
 
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
+/// Enum for all events that the event trigger can listen for
 pub enum Event {
     // zamn!! that's a lot of events
     TinyLanding = 1,
@@ -504,15 +536,6 @@ impl Event {
     }
 }
 
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum ExtraID2 {
-    #[default]
-    All = 0,
-    P1 = 1,
-    P2 = 2,
-}
-
 // for debug purposes
 
 // fn parse_with_err_handle<T>(s: &str, p: u16) -> T
@@ -539,19 +562,19 @@ macro_rules! parse {
 }
 
 impl GDValue {
+    /// Converts input string to a variant of this enum based on the property type
     pub fn from(t: GDObjPropType, s: &str) -> Self {
         match t {
             GDObjPropType::Bool => Self::Bool(s == "1"),
             GDObjPropType::Toggle => Self::Toggle(s == "1"),
             GDObjPropType::ColourChannel => {
-                Self::ColourChannel(ColourChannel::from_int(parse!(s => i16)))
+                Self::ColourChannel(ColourChannel::from(parse!(s => i16)))
             }
-            GDObjPropType::Easing => Self::Easing(MoveEasing::from_i32(parse!(s => i32))),
+            GDObjPropType::Easing => Self::Easing(MoveEasing::from(parse!(s => i32))),
             GDObjPropType::Float => Self::Float(parse!(s => f64)),
             GDObjPropType::Int => Self::Int(parse!(s => i32)),
             GDObjPropType::EventsList => Self::Events(
                 s.split('.')
-                    .into_iter()
                     .map(|i| Event::from_i32(parse!(i => i32)))
                     .collect(),
             ),
@@ -562,11 +585,13 @@ impl GDValue {
     }
 
     #[inline(always)]
+    /// Converts a vector of [`Group`]s to a [`GDValue`]
     pub fn from_group_list(g: Vec<Group>) -> Self {
         Self::GroupList(SmallVec::from_vec(g.iter().map(|&g| g.id()).collect()))
     }
 
     #[inline(always)]
+    /// Converts a vector of parent [`Group`]s to a [`GDValue`]
     pub fn parents_group_list(g: Vec<Group>) -> Self {
         Self::GroupList(SmallVec::from_vec(
             g.iter()
@@ -579,18 +604,21 @@ impl GDValue {
     }
 
     #[inline(always)]
+    /// Converts a probabilities list to a [`GDValue`].
     pub fn from_prob_list(g: Vec<(i16, i32)>) -> Self {
         Self::ProbabilitiesList(SmallVec::from_vec(g))
     }
 
     #[inline(always)]
+    /// Converts a raw colour channel value to a [`GDValue`].
     pub fn colour_channel(s: &str) -> Self {
-        Self::ColourChannel(ColourChannel::from_int(s.parse().unwrap_or(0)))
+        Self::ColourChannel(ColourChannel::from(s.parse().unwrap_or(0)))
     }
 
     #[inline(always)]
+    /// Converts a raw zlayer value to a [`GDValue`].
     pub fn zlayer(s: &str) -> Self {
-        Self::ZLayer(ZLayer::from_i32(s.parse().unwrap_or(0)))
+        Self::ZLayer(ZLayer::from(s.parse().unwrap_or(0)))
     }
 }
 
@@ -640,7 +668,7 @@ impl Display for GDValue {
                     false => "-1",
                 }
             ),
-            GDValue::ColourChannel(v) => write!(f, "{}", i_buf.format(v.to_int())),
+            GDValue::ColourChannel(v) => write!(f, "{}", i_buf.format(Into::<i16>::into(*v))),
             GDValue::Easing(v) => write!(f, "{}", i_buf.format(*v as i32)),
             GDValue::Float(v) => write!(f, "{}", d_buf.format(*v)),
             GDValue::Group(v) | GDValue::Item(v) => write!(f, "{}", i_buf.format(*v)),
@@ -653,13 +681,6 @@ impl Display for GDValue {
             GDValue::Events(evts) => write!(f, "{}", fmt_intlist!(evts, i_buf)),
         }
     }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct GDObjProperty {
-    pub name: u16,
-    pub desc: &'static str,
-    pub arg_type: GDObjPropType,
 }
 
 // Map of all object ids to names: (id, name)
@@ -789,19 +810,19 @@ const OBJECT_NAMES: &[(i32, &str)] = &[
 ];
 
 /// Container for GD Object properties.
-/// * `id`: The object's ID.
-/// * `config`: General properties like position and scale.
-/// * `properties`: Object-specific properties like target group for a move trigger
 #[derive(Clone, PartialEq)]
 pub struct GDObject {
+    /// The object's ID.
     pub id: i32,
+    /// General properties, such as position and scale.
     pub config: GDObjConfig,
+    /// Object-specific properties
     pub properties: Vec<(u16, GDValue)>,
 }
 
 impl Display for GDObject {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let group_str = match self.config.groups.len() > 0 {
+        let group_str = match !self.config.groups.is_empty() {
             true => &format!(
                 " with groups: {}",
                 self.config
@@ -829,7 +850,7 @@ impl Display for GDObject {
         write!(
             f,
             "{trigger_conf_str}{} @ ({}, {}) scaled to ({}, {}){} angled to {}°",
-            self.name(),
+            self.get_name(),
             self.config.pos.0,
             self.config.pos.1,
             self.config.scale.0,
@@ -908,7 +929,7 @@ impl GDObject {
                         val.trim_matches('"')
                             .split(".")
                             .filter_map(|g| g.parse::<i16>().ok())
-                            .map(|id| Group::Regular(id))
+                            .map(Group::Regular)
                             .collect::<Vec<Group>>(),
                     );
                 }
@@ -917,12 +938,12 @@ impl GDObject {
                 EDITOR_LAYER_1 => obj.config.editor_layers.0 = val.parse().unwrap_or(0),
                 EDITOR_LAYER_2 => obj.config.editor_layers.1 = val.parse().unwrap_or(0),
                 OBJECT_COLOUR => {
-                    obj.config.colour_channels.0 = ColourChannel::from_int(val.parse().unwrap_or(0))
+                    obj.config.colour_channels.0 = ColourChannel::from(val.parse().unwrap_or(0))
                 }
                 SECONDARY_COLOUR => {
-                    obj.config.colour_channels.1 = ColourChannel::from_int(val.parse().unwrap_or(0))
+                    obj.config.colour_channels.1 = ColourChannel::from(val.parse().unwrap_or(0))
                 }
-                Z_LAYER => obj.config.z_layer = ZLayer::from_i32(val.parse().unwrap_or(0)),
+                Z_LAYER => obj.config.z_layer = ZLayer::from(val.parse().unwrap_or(0)),
                 Z_ORDER => obj.config.z_order = val.parse().unwrap_or(0),
                 ENTER_EFFECT_CHANNEL => obj.config.enter_effect_channel = val.parse().unwrap_or(0),
                 OBJECT_MATERIAL => obj.config.material_id = val.parse().unwrap_or(0),
@@ -969,7 +990,7 @@ impl GDObject {
                         val.trim_matches('"')
                             .split(".")
                             .filter_map(|g| g.parse::<i16>().ok())
-                            .map(|id| Group::Parent(id))
+                            .map(Group::Parent)
                             .collect::<Vec<Group>>(),
                     );
                 }
@@ -977,9 +998,7 @@ impl GDObject {
             }
         }
 
-        // obj.properties.sort_by(|a, b| a.0.cmp(&b.0));
-
-        return obj;
+        obj
     }
 
     fn set_property_raw(&mut self, p: u16, value: &str) {
@@ -1018,7 +1037,7 @@ impl GDObject {
     /// let object_str = GDObject::new(1, GDObjConfig::default(), GDObjProperties::new()).to_string();
     /// assert_eq!(object_str, "1,1,2,0.0,3,0.0,64,1,67,1;");
     /// ```
-    pub fn to_string(&self) -> String {
+    pub fn serialise_to_string(&self) -> String {
         let mut properties_string = String::with_capacity(self.properties.len() * 8);
         for (idx, val) in self.properties.iter() {
             let (pref, id) = if *idx < 10_000 {
@@ -1029,13 +1048,14 @@ impl GDObject {
 
             write!(properties_string, ",{pref}{id},{val}").unwrap();
         }
-        let config_str = self.config.to_string();
+        let config_str = self.config.serialise_to_string();
 
         let raw_str = format!("1,{}{config_str}{properties_string}", self.id);
-        return raw_str.replace("\"", "") + ";";
+        raw_str.replace("\"", "") + ";"
     }
 
-    pub fn name(&self) -> String {
+    /// Returns this object's name
+    pub fn get_name(&self) -> String {
         OBJECT_NAMES
             .iter()
             .find(|&o| o.0 == self.id)
@@ -1055,10 +1075,12 @@ impl GDObject {
     }
 
     #[inline]
+    /// Creates a default object from the specified ID
     pub fn from_id(id: i32) -> Self {
         defaults::default_object(id)
     }
 
+    /// Fetches a property from this object's configuration
     pub fn get_property(&self, p: u16) -> Option<GDValue> {
         match p {
             // one of the most fascinating matches of all time
@@ -1074,8 +1096,8 @@ impl GDObject {
             129 => Some(GDValue::Float(self.config.scale.1)),
             20 => Some(GDValue::Short(self.config.editor_layers.0)),
             61 => Some(GDValue::Short(self.config.editor_layers.1)),
-            21 => Some(GDValue::Short(self.config.colour_channels.0.to_int())),
-            22 => Some(GDValue::Short(self.config.colour_channels.1.to_int())),
+            21 => Some(GDValue::Short(self.config.colour_channels.0.into())),
+            22 => Some(GDValue::Short(self.config.colour_channels.1.into())),
             24 => Some(GDValue::ZLayer(self.config.z_layer)),
             25 => Some(GDValue::Int(self.config.z_order)),
             343 => Some(GDValue::Short(self.config.enter_effect_channel)),
@@ -1113,24 +1135,26 @@ impl GDObject {
         }
     }
 
+    /// Set this object's internal config
     pub fn set_config(&mut self, config: GDObjConfig) {
         self.config = config;
     }
 }
 
-/// Trigger config, used for defining general properties of a trigger object:
-/// * is touch triggerable?
-/// * is spawn triggerable?
-/// * is multitriggerable?
+/// Trigger config, used for defining general properties of a trigger object
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct TriggerConfig {
+    /// is touch triggerable?
     pub touchable: bool,
+    /// is spawn triggerable?
     pub spawnable: bool,
+    /// is multitriggerable?
     pub multitriggerable: bool,
 }
 
 /// Group ID container for regular and parent groups
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum Group {
     Regular(i16),
     Parent(i16),
@@ -1147,7 +1171,14 @@ impl Ord for Group {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd)]
+impl PartialOrd for Group {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 /// Group type enum
 pub enum GroupType {
     Regular,
@@ -1167,13 +1198,21 @@ impl Ord for GroupType {
     }
 }
 
+impl PartialOrd for GroupType {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 impl Group {
+    /// Returns this group's ID
     pub fn id(&self) -> i16 {
         match self {
             Self::Regular(id) => *id,
             Self::Parent(id) => *id,
         }
     }
+    /// Returns this group's type
     pub fn get_type(&self) -> GroupType {
         match self {
             Group::Parent(_) => GroupType::Parent,
@@ -1191,32 +1230,36 @@ impl From<i16> for Group {
 /// Object config, used for defining general properties of an object
 #[derive(Clone, Debug, PartialEq)]
 pub struct GDObjConfig {
+    /// Position of this object
     pub pos: (f64, f64),
+    /// Scale of this object
     pub scale: (f64, f64),
+    /// Angle of rotation
     pub angle: f64,
+    /// Groups (both parents and regular)
     pub groups: Vec<Group>,
+    /// Trigger activation config
     pub trigger_cfg: TriggerConfig,
+    /// Z order of this object
     pub z_order: i32,
+    /// Z layer of this object
     pub z_layer: ZLayer,
+    /// Editor layers of this object
     pub editor_layers: (i16, i16),
+    /// Main and detail colour channels respectively
     pub colour_channels: (ColourChannel, ColourChannel),
+    /// Enter effect channel
     pub enter_effect_channel: i16,
+    /// Material ID
     pub material_id: i16,
+    /// Control ID
     pub control_id: i16,
+    /// Common attributes
     pub attributes: GDObjAttributes,
 }
 
-impl GDObjConfig {
-    /// Constructor with default properties:
-    /// * position: 0, 0
-    /// * scale: 1.0, 1.0
-    /// * angle: 0.0,
-    /// * groups: none
-    /// * not touch triggerable
-    /// * not spawn triggerable
-    /// * not multi triggerable
-    #[inline(always)]
-    pub fn default() -> Self {
+impl Default for GDObjConfig {
+    fn default() -> Self {
         GDObjConfig {
             pos: (0.0, 0.0),
             scale: (1.0, 1.0),
@@ -1237,15 +1280,17 @@ impl GDObjConfig {
             attributes: GDObjAttributes::new(),
         }
     }
+}
 
+impl GDObjConfig {
     /// Alias for default
     #[inline(always)]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Converts this config to a properties hashmap
-    pub fn to_string(&self) -> String {
+    /// Serialises this config struct to a string
+    pub fn serialise_to_string(&self) -> String {
         let mut properties = String::with_capacity(64);
         let _ = write!(
             properties,
@@ -1282,10 +1327,10 @@ impl GDObjConfig {
                 ("61", self.editor_layers.1, 0),
                 (
                     "21",
-                    self.colour_channels.0.to_int(),
-                    ColourChannel::Object.to_int(),
+                    self.colour_channels.0.into(),
+                    ColourChannel::Object.into(),
                 ),
-                ("22", self.colour_channels.1.to_int(), 1),
+                ("22", self.colour_channels.1.into(), 1),
                 ("24", self.z_layer as i16, ZLayer::T1 as i16),
                 ("343", self.enter_effect_channel, 0),
                 ("446", self.material_id, 0),
@@ -1307,12 +1352,12 @@ impl GDObjConfig {
             properties.push_str(group_str);
         };
 
-        return properties;
+        properties
     }
 
     fn dedup_groups(&mut self) {
         // sort beforehand
-        self.groups.sort_by(|a, b| a.cmp(&b));
+        self.groups.sort();
         self.groups.dedup_by(|a, b| a.id() == b.id());
     }
 
@@ -1644,6 +1689,8 @@ impl GDObjConfig {
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
+#[allow(missing_docs)]
+/// Common attributes container struct
 pub struct GDObjAttributes {
     pub dont_fade: bool,
     pub dont_enter: bool,
@@ -1673,35 +1720,12 @@ pub struct GDObjAttributes {
 
 impl GDObjAttributes {
     #[inline(always)]
+    /// Makes a default instance of this object
     pub fn new() -> Self {
-        Self {
-            dont_fade: false,
-            dont_enter: false,
-            no_effects: false,
-            is_group_parent: false,
-            is_area_parent: false,
-            dont_boost_x: false,
-            dont_boost_y: false,
-            high_detail: false,
-            no_touch: false,
-            passable: false,
-            hidden: false,
-            non_stick_x: false,
-            non_stick_y: false,
-            extra_sticky: false,
-            extended_collision: false,
-            is_ice_block: false,
-            grip_slope: false,
-            no_glow: false,
-            no_particles: false,
-            scale_stick: false,
-            no_audio_scale: false,
-            center_effect: false,
-            single_ptouch: false,
-            reverse: false,
-        }
+        Self::default()
     }
 
+    /// Serialises this object to a string
     pub fn get_property_str(&self) -> String {
         let fields = [
             (DONT_FADE, self.dont_fade),
@@ -1737,12 +1761,6 @@ impl GDObjAttributes {
             }
         }
         properties_str
-    }
-
-    /// Alias for `new()`
-    #[inline(always)]
-    pub fn default() -> Self {
-        Self::new()
     }
 }
 

@@ -1,3 +1,5 @@
+//! Default constructors for all objects
+
 use phf::{Map, phf_map};
 
 use crate::gdobj::GDObjConfig;

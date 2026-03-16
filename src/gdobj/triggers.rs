@@ -2,8 +2,10 @@
 //! # ⚠️ Warning
 //! **This file is incomplete. More triggers will be added in the future.**
 
+use std::fmt::Display;
+
 use crate::gdobj::{
-    Anim, ColourChannel, Event, ExtraID2, GDObjConfig, GDObject, GDValue, Item, MoveEasing,
+    Anim, ColourChannel, Event, GDObjConfig, GDObject, GDValue, Item, MoveEasing,
     ids::{
         objects::{
             BG_EFFECT_OFF, BG_EFFECT_ON, BG_SPEED_CONFIG, CAMERA_GUIDE, COLLISION_BLOCK,
@@ -60,9 +62,22 @@ use crate::gdobj::{
     },
 };
 
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[allow(missing_docs)]
+/// Extra ID 2 parameter in the event trigger
+pub enum ExtraID2 {
+    #[default]
+    All = 0,
+    P1 = 1,
+    P2 = 2,
+}
+
 /// Enum for move targets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum MoveTarget {
+    // Targets this group's parent object
     Group(i16),
     Player1,
     Player2,
@@ -71,6 +86,7 @@ pub enum MoveTarget {
 /// Enum for the GD gamemodes corresponding to their internal values
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum Gamemode {
     Cube = 0,
     Ship = 1,
@@ -85,6 +101,7 @@ pub enum Gamemode {
 /// Enum for stop trigger modes
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum StopMode {
     Stop = 0,
     Pause = 1,
@@ -94,6 +111,7 @@ pub enum StopMode {
 /// Enum for item alignments
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum ItemAlign {
     Center = 0,
     Left = 1,
@@ -103,6 +121,7 @@ pub enum ItemAlign {
 /// Enum for transition object enter/exit config
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum TransitionMode {
     Both = 0,
     Enter = 1,
@@ -112,6 +131,7 @@ pub enum TransitionMode {
 /// Enum for transition object type (from top, from bottom, etc.)
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[allow(missing_docs)]
 pub enum TransitionType {
     Fade = 22,
     FromBottom = 23,
@@ -132,6 +152,7 @@ pub enum TransitionType {
 /// Enum for item operators
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum Op {
     Set = 0,
     Add = 1,
@@ -143,6 +164,7 @@ pub enum Op {
 /// Enum for item comparison operators
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum CompareOp {
     Equals = 0,
     Greater = 1,
@@ -152,16 +174,24 @@ pub enum CompareOp {
     NotEquals = 5,
 }
 
+/// Compare operand configuration specifier for the item control trigger
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CompareOperand {
+    /// Base item whose value is being used for the comparsion
     pub operand_item: Item,
+    /// Multiplier
     pub modifier: f64,
+    /// Operator between the item's value and modifier. Can only be `Op::Mul` or `Op::Div`
     pub mod_op: Op,
+    /// Forces a specific rounding on the resulting value: See [`RoundMode`]
     pub rounding: RoundMode,
+    /// Forces a specific sign on the resulting value: See [`SignMode`]
     pub sign: SignMode,
 }
 
 impl CompareOperand {
+    /// Constructor for an operand that is simply a number literal.  
+    /// Useful for comparing an [`Item`] against a number
     pub fn number_literal(num: f64) -> Self {
         Self {
             operand_item: Item::Counter(0),
@@ -188,7 +218,9 @@ impl From<Item> for CompareOperand {
 /// Enum for item round modes
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum RoundMode {
+    /// Leave as-is
     None = 0,
     Nearest = 1,
     Floor = 2,
@@ -198,7 +230,9 @@ pub enum RoundMode {
 /// Enum for item sign modes
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum SignMode {
+    /// Leave as-is
     None = 0,
     Absolute = 1,
     Negative = 2,
@@ -208,21 +242,28 @@ pub enum SignMode {
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TargetPlayer {
+    /// Player 1
     Player1 = 138,
+    /// Player 2
     Player2 = 200,
+    /// Player that touched the gravity trigger
     PlayerTarget = 201,
 }
 
 /// Enum for move mode setting. See structs [`DefaultMove`], [`TargetMove`], and [`DirectionalMove`]
 #[derive(Debug, Clone, PartialEq)]
 pub enum MoveMode {
+    /// Normal axis-based move mode
     Default(DefaultMove),
+    /// Moves the group to the position of another group
     Targeting(TargetMove),
+    /// Moves the group in the direction of another group
     Directional(DirectionalMove),
 }
 
 /// Enum for lock config: player or camera
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum MoveLock {
     Player,
     Camera,
@@ -231,6 +272,7 @@ pub enum MoveLock {
 /// Enum for relative UI reference position
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum UIReferencePos {
     Auto = 1,
     Center = 2,
@@ -239,53 +281,54 @@ pub enum UIReferencePos {
 }
 
 /// Config struct for default movement
-/// # Fields
-/// * `dx`: Units to move in x-axis. Used as multiplier of player/camera movement if `x_lock` is used
-/// * `dy`: Units to move in y-axis. Used as multiplier of player/camera movement if `y_lock` is used
-/// * `x_lock`: Optional lock on x movement which allows the object to move relative to either the player or the camera
-/// * `y_lock`: Optional lock on y movement which allows the object to move relative to either the player or the camera
 #[derive(Debug, Clone, PartialEq)]
 pub struct DefaultMove {
+    /// Units to move in x-axis. Used as multiplier of player/camera movement if `x_lock` is used
     pub dx: f64,
+    /// Units to move in y-axis. Used as multiplier of player/camera movement if `y_lock` is used
     pub dy: f64,
+    /// Optional lock on x movement which allows the object to move relative to either the player or the camera
     pub x_lock: Option<MoveLock>,
+    /// Optional lock on y movement which allows the object to move relative to either the player or the camera
     pub y_lock: Option<MoveLock>,
 }
 
 /// Config struct for moving to a specific target.
-/// # Fields
-/// * `target_group_id`: Group that will be moved to. Use `POS_PLAYER1` and `POS_PLAYER2` consts to specify moving to one of the players.
-/// * `center_group_id`: (Optional) The objects that represent the center of the group that is moving
-/// * `axis_only`: Optional axis restriction. Use constants `MOVE_X_ONLY` and `MOVE_Y_ONLY` to specify axis.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TargetMove {
+    /// Group that will be moved to. Use `POS_PLAYER1` and `POS_PLAYER2` consts to specify moving to one of the players.
     pub target_group_id: MoveTarget,
+    /// (Optional) The objects that represent the center of the group that is moving
     pub center_group_id: Option<i16>,
+    /// Optional axis restriction. Use constants `MOVE_X_ONLY` and `MOVE_Y_ONLY` to specify axis.
     pub axis_only: Option<AxisOnlyMove>,
 }
 
+/// Optional axis lock for move triggers
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AxisOnlyMove {
+    /// Locks to X-axis
     X = 1,
+    /// Locks to Y-axis
     Y = 2,
 }
 
 /// Config struct for moving to a specific target.
-/// # Fields
-/// * `target_group_id`: Group that will be moved to. Use `POS_PLAYER1` and `POS_PLAYER2` consts to specify moving to one of the players.
-/// * `center_group_id`: (Optional) The objects that represent the center of the group that is moving
-/// * `distance`: Distance in units to move in the direction of the target objects.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DirectionalMove {
+    /// Group that will be moved to. Use `POS_PLAYER1` and `POS_PLAYER2` consts to specify moving to one of the players.
     pub target_group_id: MoveTarget,
+    /// (Optional) The objects that represent the center of the group that is moving
     pub center_group_id: Option<i16>,
+    /// Distance in units to move in the direction of the target objects.
     pub distance: i32,
 }
 
 /// Enum for starting speed in a startpos
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum StartingSpeed {
     X0Point5 = 1,
     X1 = 0,
@@ -297,16 +340,22 @@ pub enum StartingSpeed {
 /// Config struct for HSV colour settings
 #[derive(Debug, Clone, PartialEq)]
 pub struct HSVColour {
+    /// Hue shift
     pub hue_shift: i32,
+    /// Saturation multiplier
     pub saturation_mult: f64,
+    /// Brightness multiplier
     pub brightness_mult: f64,
+    /// Use static saturation scalar
     pub static_sat_scalar: bool,
+    /// Use static brightness scalar
     pub static_bright_scalar: bool,
 }
 
-impl HSVColour {
-    pub fn to_string(&self) -> String {
-        format!(
+impl Display for HSVColour {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{}a{}a{}a{}a{}",
             self.hue_shift,
             self.saturation_mult,
@@ -320,81 +369,160 @@ impl HSVColour {
 /// Enum for target of pulse
 #[derive(Debug, Clone, PartialEq)]
 pub enum PulseTarget {
+    /// Pulse for a group
     Group(PulseGroup),
+    /// Pulse for a channel
     Channel(PulseChannel),
 }
 
 /// Config struct for channel pulses
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PulseChannel {
+    /// Channel which is pulsed
     pub channel_id: i16,
 }
 
 /// Config struct for group pulses
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PulseGroup {
+    /// Group that is being pulsed
     pub group_id: i16,
+    /// Toggles pulsing the main colour of objects only
     pub main_colour_only: bool,
+    /// Toggles pulsing the detail colour of object only
     pub detail_colour_only: bool,
 }
 
+/// Enum for pulse mode
 pub enum PulseMode {
+    /// Pulse with colour
     Colour(PulseColour),
+    /// Pulse with HSV
     HSV(PulseHSV),
 }
 
+/// RGB colour tuple
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub struct PulseColour {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
 }
 
+/// Configuration struct for scaling of objects in the scale trigger
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ScaleConfig {
+    /// Scale of target on x-axis
+    pub x_scale: f64,
+    /// Scale of target on y-axis
+    pub y_scale: f64,
+    /// Divides the x scale by the existing x-axis scale value of the target
+    pub div_by_value_x: bool,
+    /// Divides the y scale by the existing y-axis scale value of the target
+    pub div_by_value_y: bool,
+    /// Makes the objects only move as if they were scaled, but not actually scale them
+    pub only_move: bool,
+    /// Bases scaling on the center object
+    pub relative_scale: bool,
+    /// Rotates the x and y axes too
+    pub relative_rotation: bool,
+}
+
+/// Pulse with HSV mode configuration
 #[derive(Debug, Clone, PartialEq)]
 pub struct PulseHSV {
+    /// HSV pulse specification
     pub hsv_config: HSVColour,
+    /// Toggles using static HSV
     pub use_static_hsv: bool,
+    /// Target of the pulse
     pub colour_id: ColourChannel,
 }
 
 /// Config struct for copy colour options
 #[derive(Debug, Clone, PartialEq)]
 pub struct CopyColourConfig {
+    /// Original colour channel from which to copy colour
     pub original_ch: ColourChannel,
+    /// HSV modifier for new colour
     pub hsv_config: HSVColour,
+    /// Whether to apply legacy HSV transformation
     pub use_legacy_hsv: bool,
+    /// Copy original colour's opacity
     pub copy_opacity: bool,
 }
 
 /// Enum for rotation configs
 #[derive(Debug, Clone, PartialEq)]
 pub enum RotationMode {
+    /// Regular rotation based on a fixed degree amount
     Default(RotationNormal),
+    /// Rotates the target objects to face a target group
     Aim(RotationAim),
+    /// Follows a target object's rotation
     Follow(RotationAim),
 }
 
+/// Struct for specifying rotation settings in a rotate trigger
+#[derive(Debug, Clone, PartialEq)]
+pub struct RotationConfig {
+    /// See [`RotationMode`]
+    pub mode: RotationMode,
+    /// Update location of aim group in real time]
+    pub dynamic_mode: bool,
+    /// Prevent target object from rotating around its center
+    pub lock_object_rotation: bool,
+}
+
+/// Configuration struct for the time trigger
 #[derive(Debug, Clone, Copy, PartialEq)]
+pub struct TimeTriggerConfig {
+    /// Starting time of target timer that will be set on activation of the trigger
+    pub start_time: f64,
+    /// Time at which to call the target group
+    pub stop_time: f64,
+    /// Whether or not to pause the timer once it reaches the stop time
+    pub pause_when_reached: bool,
+    /// Time multiplier for this timer
+    pub time_mod: f64,
+    /// Target timer ID
+    pub timer_id: i16,
+    /// Toggles ignoring global timewarp
+    pub ignore_timewarp: bool,
+    /// Starts this timer paused, which allows a time control trigger to un-pause it
+    pub start_paused: bool,
+    /// Only starts the timer if any of these are met:
+    ///     1. Target timer is at 0.00
+    ///     2. The `start_paused` option is on
+    ///     3. The timer is not currently counting
+    pub dont_override: bool,
+}
+
+/// Degree amount rotation specifier
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub struct RotationNormal {
     pub degrees: f64,
     pub x360: i32,
 }
 
+/// Optional target of rotation
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
 pub enum RotationPlayerTarget {
     Player1,
     Player2,
 }
 
 /// Config struct for aim mode rotation
-/// # Fields
-/// * `aim_target`: Group around which to rotate
-/// * `rot_offset`: Rotation offset of the rotating group
-/// * `player_target`: Overrides aim_target if not None, uses either P1 or P2 as the target instead.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RotationAim {
+    /// Group around which to rotate
     pub aim_target: i16,
+    /// Rotation offset of the rotating group
     pub rot_offset: f64,
+    ///  Overrides aim_target if not None, uses either P1 or P2 as the target instead.
     pub player_target: Option<RotationPlayerTarget>,
 }
 
@@ -590,7 +718,7 @@ pub fn colour_trigger(
         (DURATION_GROUP_TRIGGER_CHANCE, GDValue::Float(fade_time)),
         (USING_PLAYER_COLOUR_1, GDValue::Bool(use_player_col_1)),
         (USING_PLAYER_COLOUR_2, GDValue::Bool(use_player_col_2)),
-        (COLOUR_CHANNEL, GDValue::Short(channel.to_int())),
+        (COLOUR_CHANNEL, GDValue::Short(channel.into())),
         (OPACITY, GDValue::Float(opacity)),
         (BLENDING_ENABLED, GDValue::Bool(blending)),
     ];
@@ -1118,14 +1246,15 @@ pub fn item_edit(
 /// * `false_id`: Group that is activated when the comparison is false
 /// * \*`lhs`: [`CompareOperand`] config struct for left-hand side operand.
 /// * \*`rhs`: [`CompareOperand`] config struct for right-hand side operand.
+/// * `compare_op`: Operator used to compare the two sides. See [`CompareOp`] enum.
+/// * `tolerance`: Tolerant range of comparsion. Comparsion will be true if the absolute resulting value is less than or equal to the tolerance.
+///
+/// \* The modifier operators describe how the modifier interacts with the item, except for setting the item
+///
 /// The modifier is applied to each respective operand according to the specified modifier operator.
 /// The round and sign modes are applied at the end of evaluation to each operand.
 /// The right-hand side will be just the modifier if the item id is left as 0 (not specified).
 /// This is useful when it is necessary to compare an item value and an integer or float literal.
-/// * `compare_op`: Operator used to compare the two sides. See [`CompareOp`] enum.
-/// * `tolerance`: Tolerant range of comparsion. Comparsion will be true if the absolute resulting value is less than or equal to the tolerance.
-///
-/// \*The modifier operators describe how the modifier interacts with the item, except for setting the item
 pub fn item_compare(
     config: &GDObjConfig,
     true_id: i16,
@@ -1279,7 +1408,7 @@ pub fn on_death(config: &GDObjConfig, target_group: i16, activate_group: bool) -
 /// * `particle_group`: Group that contains the particle objects
 /// * `position_group`: Group at which the particles will be spawned
 /// * `position_offsets`: (x, y) tuple for offsets from their original spawn location.
-/// Note: all particle objects spawn in the same position, regardless of their offsets within their group.
+///   Note: all particle objects spawn in the same position, regardless of their offsets within their group.
 /// * `position_variation`: (x, y) tuple for range of possible random positional variation.
 /// * `rotation_config`: (rotation, variation) tuple that describes the rotation of the particles + random offset range
 /// * `scale_config`: (scale, variation) tuple that describes the scale of the particles + random offset range
@@ -1400,11 +1529,11 @@ pub fn state_block(config: &GDObjConfig, state_on: i16, state_off: i16) -> GDObj
 /// * `target_id`: ID of group that is activated when the two colliders collide
 /// * `collide_player1`: whether to check for collision with player 1 instead of collider 1
 /// * `collide_player2`: whether to check for collision with player 2 instead of collider 1.
-/// Does not override collision checking with player 1 if `collide_player1` is also true.
+///   Does not override collision checking with player 1 if `collide_player1` is also true.
 /// * `collide_both_players`: whether to check for collision between the two players instead of two collision blocks
 /// * `activate_group`: whether this trigger will activate or deactivate the target group
 /// * `trigger_on_exit`: activates group when the two colliders' hitboxes stop overlapping after collision
-/// instead of when they start colliding.
+///   instead of when they start colliding.
 ///
 /// **Note**: At least one of the collider blocks must be dynamic for this collision to register.
 #[inline(always)]
@@ -1450,7 +1579,7 @@ pub fn collision_trigger(
 /// * `false_id`: ID of group that is activated if the two colliders do not collide
 /// * `collide_player1`: whether to check for collision with player 1 instead of collider 1
 /// * `collide_player2`: whether to check for collision with player 2 instead of collider 1.
-/// Does not override collision checking with player 1 if `collide_player1` is also true.
+///   Does not override collision checking with player 1 if `collide_player1` is also true.
 /// * `collide_both_players`: whether to check for collision between the two players instead of two collision blocks
 #[inline(always)]
 pub fn instant_coll_trigger(
@@ -1486,43 +1615,29 @@ pub fn instant_coll_trigger(
 /// Returns a time trigger
 /// # Arguments
 /// * `config`: General object options, such as position and scale
-/// * `start_time`: Starting time of the timer
-/// * `stop_time`: Target time that is set to be reached.
-/// * `pause_when_reached`: Whether to pause the timer when the target time is reached
-/// * `time_mod`: Time value multiplier
-/// * `timer_id`: Target timer
+/// * `time_cfg`: Main trigger configuration. See [`TimeTriggerConfig`].
 /// * `target_group`: Group that is activated when the timer reaches the target value
-/// * `ignore_timewarp`: Ignore timewarp when running the timer
-/// * `start_paused`: Pause timer immediately after starting
-/// * `dont_override`: Only starts the timer if any of these are met:
-/// 	1. Target timer is at 0.00
-/// 	2. The `start_paused` option is on
-/// 	3. The timer is not currently counting
 pub fn time_trigger(
     config: &GDObjConfig,
-    start_time: f64,
-    stop_time: f64,
-    pause_when_reached: bool,
-    time_mod: f64,
-    timer_id: i16,
+    time_cfg: TimeTriggerConfig,
     target_group: i16,
-    ignore_timewarp: bool,
-    start_paused: bool,
-    dont_override: bool,
 ) -> GDObject {
     GDObject::new(
         TRIGGER_TIME,
         config,
         vec![
-            (START_TIME, GDValue::Float(start_time)),
-            (TARGET_TIME, GDValue::Float(stop_time)),
-            (PAUSE_AT_TARGET_TIME, GDValue::Bool(pause_when_reached)),
-            (TIME_VALUE_MULTIPLER, GDValue::Float(time_mod)),
-            (INPUT_ITEM_1, GDValue::Item(timer_id)),
+            (START_TIME, GDValue::Float(time_cfg.start_time)),
+            (TARGET_TIME, GDValue::Float(time_cfg.stop_time)),
+            (
+                PAUSE_AT_TARGET_TIME,
+                GDValue::Bool(time_cfg.pause_when_reached),
+            ),
+            (TIME_VALUE_MULTIPLER, GDValue::Float(time_cfg.time_mod)),
+            (INPUT_ITEM_1, GDValue::Item(time_cfg.timer_id)),
             (TARGET_ITEM, GDValue::Group(target_group)),
-            (IGNORE_TIMEWARP, GDValue::Bool(ignore_timewarp)),
-            (START_PAUSED_TIMER, GDValue::Bool(start_paused)),
-            (DONT_OVERRIDE, GDValue::Bool(dont_override)),
+            (IGNORE_TIMEWARP, GDValue::Bool(time_cfg.ignore_timewarp)),
+            (START_PAUSED_TIMER, GDValue::Bool(time_cfg.start_paused)),
+            (DONT_OVERRIDE, GDValue::Bool(time_cfg.dont_override)),
         ],
     )
 }
@@ -1668,7 +1783,7 @@ pub fn animate_trigger(config: &GDObjConfig, target_group: i16, animation: Anim)
         config,
         vec![
             (TARGET_ITEM, GDValue::Group(target_group)),
-            (ANIMATION_ID, GDValue::Int(animation.as_i32())),
+            (ANIMATION_ID, GDValue::Int(animation.into())),
         ],
     )
 }
@@ -1707,6 +1822,7 @@ pub fn count_trigger(
 /// # Arguments
 /// * `config`: General object options, such as position and scale
 /// * `probabilities`: List of tuples: (target group, chance to trigger this group).
+///
 /// Chances are considered relative to each other, meaning that they are not
 /// precentage-based. Two groups with the same relative chance will have the same
 /// (50-50) chance to be triggered
@@ -1756,23 +1872,20 @@ pub fn ui_config_trigger(
 }
 
 /// Returns a rotate trigger
-/// # Arguments
+/// # Arguments (TODO: move to rotation config)
 /// * `config`: General object options, such as position and scale
 /// * `move_time`: Time to rotate the target
-/// * `rotation_mode`: See [`RotationMode`]
-/// * `dynamic_mode`: Update location of aim group in real time]
-/// * `lock_object_rotation`: Prevent target object from rotating around its center
+/// * `rotation_cfg`: Rotation specifics. See [`RotationConfig`]
 /// * `easing`: optional move easing and rate. See [`MoveEasing`]
 /// * `target_group`: Group that will rotate
 /// * `center_group_id`: Group that is being rotated around
 /// * `bounding_box`: Optional vertices of a bounding box that limit the position of the rotation group.
+///
 /// The tuple corresponds to the `MinX`, `MinY`, `MaxX`, `MaxY` group ids respectively in the rotate trigger.
 pub fn rotate_trigger(
     config: &GDObjConfig,
     move_time: f64,
-    rotation_mode: RotationMode,
-    dynamic_mode: bool,
-    lock_object_rotation: bool,
+    rotation_cfg: RotationConfig,
     easing: Option<(MoveEasing, f64)>,
     target_group: i16,
     center_group_id: i16,
@@ -1780,13 +1893,16 @@ pub fn rotate_trigger(
 ) -> GDObject {
     let mut properties = vec![
         (DURATION_GROUP_TRIGGER_CHANCE, GDValue::Float(move_time)),
-        (DYNAMIC_MOVE, GDValue::Bool(dynamic_mode)),
-        (LOCK_OBJECT_ROTATION, GDValue::Bool(lock_object_rotation)),
+        (DYNAMIC_MOVE, GDValue::Bool(rotation_cfg.dynamic_mode)),
+        (
+            LOCK_OBJECT_ROTATION,
+            GDValue::Bool(rotation_cfg.lock_object_rotation),
+        ),
         (TARGET_ITEM, GDValue::Group(target_group)),
         (TARGET_ITEM_2, GDValue::Group(center_group_id)),
     ];
 
-    match rotation_mode {
+    match rotation_cfg.mode {
         RotationMode::Aim(cfg) => {
             properties.extend_from_slice(&[
                 (TARGET_MOVE_MODE, GDValue::Bool(true)),
@@ -1839,42 +1955,33 @@ pub fn rotate_trigger(
 /// Returns a scale trigger
 /// # Arguments
 /// * `config`: General object options, such as position and scale
-/// * `x_scale`: Scale of target on x-axis
-/// * `y_scale`: Scale of target on y-axis
-/// * `div_by_value_x`: Divides the x scale by the existing x-axis scale value of the target
-/// * `div_by_value_y`: Divides the y scale by the existing y-axis scale value of the target
+/// * `scale_config`: Scaling config. See [`ScaleConfig`]
 /// * `easing`: Optional move easing and rate. See [`MoveEasing`]
 /// * `center_group_id`: Center of group that is being scaled. Leave as 0 to use the default center
 /// * `target_group`: Group that is being scaled.
 /// * `duration`: How long the scaling will be
-/// * `only_move`: Makes the objects only move as if they were scaled, but not actually scale them
-/// * `relative_scale`: Bases scaling on the center object
-/// * `relative_rotation`: Rotates the x and y axes too
 pub fn scale_trigger(
     config: &GDObjConfig,
-    x_scale: f64,
-    y_scale: f64,
-    div_by_value_x: bool,
-    div_by_value_y: bool,
+    scale_config: ScaleConfig,
     easing: Option<(MoveEasing, f64)>,
     center_group_id: i16,
     target_group: i16,
     duration: f64,
-    only_move: bool,
-    relative_scale: bool,
-    relative_rotation: bool,
 ) -> GDObject {
     let mut properties = vec![
-        (NEW_X_SCALE, GDValue::Float(x_scale)),
-        (NEW_Y_SCALE, GDValue::Float(y_scale)),
-        (DIV_BY_VALUE_X, GDValue::Bool(div_by_value_x)),
-        (DIV_BY_VALUE_Y, GDValue::Bool(div_by_value_y)),
+        (NEW_X_SCALE, GDValue::Float(scale_config.x_scale)),
+        (NEW_Y_SCALE, GDValue::Float(scale_config.y_scale)),
+        (DIV_BY_VALUE_X, GDValue::Bool(scale_config.div_by_value_x)),
+        (DIV_BY_VALUE_Y, GDValue::Bool(scale_config.div_by_value_y)),
         (TARGET_ITEM, GDValue::Group(target_group)),
         (TARGET_ITEM_2, GDValue::Group(center_group_id)),
         (DURATION_GROUP_TRIGGER_CHANCE, GDValue::Float(duration)),
-        (ONLY_MOVE, GDValue::Bool(only_move)),
-        (RELATIVE_SCALE, GDValue::Bool(relative_scale)),
-        (RELATIVE_ROTATION, GDValue::Bool(relative_rotation)),
+        (ONLY_MOVE, GDValue::Bool(scale_config.only_move)),
+        (RELATIVE_SCALE, GDValue::Bool(scale_config.relative_scale)),
+        (
+            RELATIVE_ROTATION,
+            GDValue::Bool(scale_config.relative_rotation),
+        ),
     ];
 
     add_easing(&mut properties, easing);

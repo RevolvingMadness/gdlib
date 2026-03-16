@@ -17,7 +17,7 @@ pub fn encrypt_level_str(s: String) -> Vec<u8> {
     let compress = zlib_compress(s.clone());
     let mut data = b"H4sIAAAAAA".to_vec();
     data.extend_from_slice(&compress[2..compress.len() - 4]);
-    let crc_checksum = crc32fast::hash(&s.as_bytes()[..]).to_le_bytes();
+    let crc_checksum = crc32fast::hash(s.as_bytes()).to_le_bytes();
     let size = s.len().to_le_bytes();
 
     data.extend_from_slice(&crc_checksum);
@@ -26,12 +26,12 @@ pub fn encrypt_level_str(s: String) -> Vec<u8> {
 
     let mut header = b"H4sIAAAAAAAAC".to_vec();
     header.extend_from_slice(&base64.as_bytes()[13..]);
-    return header;
+    header
 }
 
 /// Returns the encrypted savefile string from a stringified `Levels` struct
 pub fn encrypt_savefile_str(s: String) -> Vec<u8> {
-    return encrypt_level_str(s).iter().map(|c| *c ^ 11).collect();
+    encrypt_level_str(s).iter().map(|c| *c ^ 11).collect()
 }
 
 /// Parses an XML dictionary to a string that matches GD savefile format.
@@ -82,5 +82,5 @@ pub fn stringify_xml(dict: &Dictionary, root: bool) -> String {
         true => "</dict>",
         false => "</d>",
     });
-    return dict_str;
+    dict_str
 }

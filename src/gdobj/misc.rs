@@ -31,7 +31,7 @@ pub fn text<T: AsRef<str>>(config: &GDObjConfig, text: T, kerning: i32) -> GDObj
         vec![
             (
                 BASE64ENCODED_TEXT,
-                GDValue::String(general_purpose::STANDARD.encode(text.as_ref().to_string())),
+                GDValue::String(general_purpose::STANDARD.encode(text.as_ref())),
             ),
             (KERNING, GDValue::Int(kerning)),
         ],

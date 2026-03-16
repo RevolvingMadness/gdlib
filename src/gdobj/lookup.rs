@@ -1,3 +1,4 @@
+//! Properties lookup table
 use phf::{Map, phf_map};
 
 use crate::gdobj::GDObjPropType;
@@ -237,6 +238,7 @@ pub static PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map! {
     10035u16 => ("Reset camera?", GDObjPropType::Bool),
 };
 
+/// Get type of a property by ID
 pub fn get_property_type(p: u16) -> Option<GDObjPropType> {
     PROPERTY_TABLE.get(&p).map(|v| v.1)
 }
