@@ -260,7 +260,7 @@ impl Level {
     }
 
     /// Parses a `plist::Dictionary` into a Level object
-    pub fn from_dict(d: Dictionary) -> Self {
+    pub(crate) fn from_dict(d: Dictionary) -> Self {
         // level data kv pairs
         // k2: level name
         // k3: description

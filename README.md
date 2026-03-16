@@ -6,7 +6,7 @@ As of v0.3.0, GDLib is in active development.
 
 ## Repository structure
 - `.github`: workflows for GitHub.
-- `GMD_tests`: .gmd files for tests.
+- `test_gmds`: .gmd files for tests.
 - `src`: source code of library
 - `examples`: example usages of GDLib.
 
@@ -29,7 +29,7 @@ use gdlib::{core::GDError, gdlevel::Level, gdobj::Group};
 
 fn main() -> Result<(), GDError> {
     // Load level from .gmd file
-    let mut level = Level::from_gmd("GMD_tests/level.gmd")?;
+    let mut level = Level::from_gmd("test_gmds/level.gmd")?;
 
     // Get level data, which is None only if it hasn't been initialized.
     if let Some(data) = level.get_decrypted_data_ref() {

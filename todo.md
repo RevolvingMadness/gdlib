@@ -1,6 +1,5 @@
-- better readme
-- add examples dir
 - improve tests
+- fix doc examples
 - revamp gdlevel with box optimization (for encrypted data) and better property map
 - make a level header string parser
 - fix issue 2
@@ -8,12 +7,9 @@
 - add features: 
     - `shorthand`: shorthand constructors
         - on by default
-- workflows
-    - pr to master: run cargo test and cargo clippy
-    - release: run cargo test, cargo clippy, and cargo publish
 - release v0.3.1 on github
 - link github repo to crates.io 
 - add proper benchmarks
-- add CONTRIBUTING.md
 - add github topics to repo
 - fix build script incorrectly generating file on docs.rs
+- gdobjattributes as bitflags optimization
