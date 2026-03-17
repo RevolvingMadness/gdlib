@@ -23,6 +23,7 @@ pub const DEFAULT_LEVEL_HEADERS: &str = "kS38,1_40_2_125_3_255_11_255_12_255_13_
 
 /// This struct contains other values found in the levels savefile that aren't of any particular use
 #[derive(Debug, Clone, PartialEq)]
+#[allow(missing_docs)]
 pub struct LevelsFileHeaders {
     pub llm02: Value,
     pub llm03: Value,
@@ -34,13 +35,16 @@ pub struct LevelsFileHeaders {
 /// * `headers`: other information necessary for re-encoding
 #[derive(Debug, Clone, PartialEq)]
 pub struct Levels {
+    /// All levels in the savefile
     pub levels: Vec<Level>,
+    /// Headers of the level file
     pub headers: LevelsFileHeaders,
 }
 
 /// This struct contains level data that has not yet been decrypted
 #[derive(Clone, Debug, PartialEq)]
 pub struct EncryptedLevelData {
+    /// Raw level data
     pub data: String,
 }
 
@@ -50,14 +54,18 @@ pub struct EncryptedLevelData {
 /// * `headers`: Other important information about the level
 #[derive(Clone, Debug, PartialEq)]
 pub struct LevelData {
+    /// Level header string
     pub headers: String,
+    /// Level objects
     pub objects: Vec<GDObject>,
 }
 
-/// Enum that contains either a encrypted level string or decrypted level object
+/// Enum that contains either a raw encrypted level string or decrypted level object
 #[derive(Clone, Debug, PartialEq)]
 pub enum LevelState {
+    /// Raw encrypted data
     Encrypted(EncryptedLevelData),
+    /// Parsed, structured data
     Decrypted(LevelData),
 }
 
@@ -124,10 +132,10 @@ impl Levels {
         dict.insert("LLM_02".to_string(), self.headers.llm02.clone());
         dict.insert("LLM_03".to_string(), self.headers.llm03.clone());
 
-        return format!(
+        format!(
             "<?xml version=\"1.0\"?><plist version=\"1.0\" gjver=\"2.0\">{}</plist>",
             stringify_xml(&dict, true)
-        );
+        )
     }
 
     /// Exports this struct as encrypted XML to CCLocalLevels.dat
@@ -158,7 +166,7 @@ impl Levels {
 }
 
 #[inline(always)]
-fn vec_as_str(data: &Vec<u8>) -> String {
+fn vec_as_str(data: &[u8]) -> String {
     String::from_utf8(data.to_vec()).unwrap()
 }
 
@@ -171,11 +179,17 @@ fn vec_as_str(data: &Vec<u8>) -> String {
 /// * `properties`: Other unspecified properties of this level
 #[derive(Debug, Clone, PartialEq)]
 pub struct Level {
+    /// Title of the level
     pub title: Option<String>,
+    /// Author of the level
     pub author: Option<String>,
+    /// Level description, which is a base64-encoded string
     pub description: Option<String>,
+    /// Level data as a [`LevelState`]
     pub data: Option<LevelState>,
+    /// Song used in the level
     pub song: Option<i64>,
+    /// Level properties
     pub properties: HashMap<String, Value>,
 }
 
@@ -205,6 +219,7 @@ impl Level {
         }
     }
 
+    /// Generates a hashmap with default level perties
     pub fn default_properties() -> HashMap<String, Value> {
         let mut ki6_dict = Dictionary::new();
         for i in 0..15 {
@@ -212,7 +227,7 @@ impl Level {
         }
 
         // genuienly have no clue wht any of these are
-        let properties = vec![
+        vec![
             ("kCEK", Value::from(4)),
             ("k18", Value::from(1)),
             (
@@ -233,9 +248,7 @@ impl Level {
         ]
         .into_iter()
         .map(|(k, v)| (k.to_string(), v))
-        .collect::<HashMap<String, Value>>();
-
-        return properties;
+        .collect::<HashMap<String, Value>>()
     }
 
     /// Parses a .gmd file to a `Level` object
@@ -246,9 +259,10 @@ impl Level {
             .unwrap()
             .clone();
 
-        return Ok(Level::from_dict(xmltree));
+        Ok(Level::from_dict(xmltree))
     }
 
+    /// Exports the level to a .gmd file
     pub fn export_to_gmd<T: Into<PathBuf>>(&self, path: T) -> Result<(), GDError> {
         let export_str = format!(
             "<?xml version=\"1.0\"?><plist version=\"1.0\" gjver=\"2.0\">{}</plist>",
@@ -260,7 +274,7 @@ impl Level {
     }
 
     /// Parses a `plist::Dictionary` into a Level object
-    pub fn from_dict(d: Dictionary) -> Self {
+    pub(crate) fn from_dict(d: Dictionary) -> Self {
         // level data kv pairs
         // k2: level name
         // k3: description
@@ -343,7 +357,7 @@ impl Level {
                     None
                 }
             }
-            None => return None,
+            None => None,
         }
     }
 
@@ -358,7 +372,7 @@ impl Level {
         };
         if let Some(v) = self.data.clone() {
             let str = match v {
-                LevelState::Decrypted(data) => data.to_string(),
+                LevelState::Decrypted(data) => data.serialise_to_string(),
                 LevelState::Encrypted(data) => data.data,
             };
             properties.insert("k4".to_string(), Value::from(str));
@@ -374,7 +388,7 @@ impl Level {
             properties.insert(p, val);
         }
 
-        return properties;
+        properties
     }
 
     /// Adds a GDObject to `self.objects`
@@ -384,7 +398,7 @@ impl Level {
                 LevelState::Decrypted(state) => {
                     state.objects.push(object);
                 }
-                LevelState::Encrypted(_) => return,
+                LevelState::Encrypted(_) => (),
             };
         }
     }
@@ -420,20 +434,21 @@ impl Display for Level {
 }
 
 impl LevelData {
-    pub fn to_string(&self) -> String {
+    /// Serialises this object to a string by serialising each subsequent component.
+    pub fn serialise_to_string(&self) -> String {
         let objstr = self
             .objects
             .iter()
-            .map(|obj| obj.to_string())
+            .map(|obj| obj.serialise_to_string())
             .collect::<Vec<String>>()
             .join("");
         let unencrypted = format!("{};{objstr}", self.headers.clone());
-        return vec_as_str(&encrypt_level_str(unencrypted));
+        vec_as_str(&encrypt_level_str(unencrypted))
     }
 
     /// Returns a list of all the groups that contain at least one object
     pub fn get_used_groups(&self) -> Vec<Group> {
-        if self.objects.len() == 0 {
+        if self.objects.is_empty() {
             return vec![];
         }
 
@@ -444,12 +459,12 @@ impl LevelData {
         }
         let mut arr: Vec<Group> = groups.into_iter().collect();
         arr.sort();
-        return arr;
+        arr
     }
 
     /// Returns a list of all the groups that do not contain any objects
     pub fn get_unused_groups(&self) -> Vec<Group> {
-        let all: BTreeSet<Group> = (1..10000).map(|id| Group::Regular(id)).collect();
+        let all: BTreeSet<Group> = (1..10000).map(Group::Regular).collect();
         let used: BTreeSet<Group> = self.get_used_groups().into_iter().collect();
 
         all.difference(&used).cloned().collect::<Vec<Group>>()
@@ -457,7 +472,7 @@ impl LevelData {
 
     /// Returns a list of all groups used as arguments in triggers
     pub fn get_argument_groups(&self) -> Vec<i16> {
-        if self.objects.len() == 0 {
+        if self.objects.is_empty() {
             return vec![];
         }
 
@@ -490,9 +505,10 @@ impl LevelData {
 
         groups.sort();
         groups.dedup();
-        return groups;
+        groups
     }
 
+    /// Parse raw level data to this struct
     pub fn parse(raw_data: String) -> Self {
         // parse level data
         let raw_data = decompress(raw_data.as_bytes().to_vec()).unwrap();

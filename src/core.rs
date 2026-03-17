@@ -8,10 +8,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Error enum
 #[derive(Debug)]
 pub enum GDError {
+    /// Standard IO failure
     Io(std::io::Error),
+    /// Data could not be parsed from its raw form
     DecodeError(DecodeError),
+    /// Unsuccessful plist parse
     BadPlist(plist::Error),
 }
 
@@ -88,8 +92,7 @@ pub fn proper_plist_tags(s: String) -> String {
         "</real>",
     ];
     let ac = AhoCorasick::new(find).unwrap();
-    let plist = ac.replace_all(&s, replace);
-    return plist;
+    ac.replace_all(&s, replace)
 }
 
 /// Quick function for decoding base64 bytes

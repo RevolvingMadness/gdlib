@@ -1,3 +1,4 @@
+//! Properties lookup table
 use phf::{Map, phf_map};
 
 use crate::gdobj::GDObjPropType;
@@ -8,7 +9,7 @@ use crate::gdobj::GDObjPropType;
 /// (property, name)  
 ///
 /// Reference: <https://flowvix.github.io/gd-info-explorer/props>
-pub const PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map! {
+pub static PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map! {
     1u16 => ("object ID", GDObjPropType::Int),
     2u16 => ("x pos", GDObjPropType::Float),
     3u16 => ("y pos", GDObjPropType::Float),
@@ -106,7 +107,7 @@ pub const PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map! {
     148u16 => ("Gravity", GDObjPropType::Float),
     150u16 => ("New X Scale", GDObjPropType::Float),
     151u16 => ("New Y Scale", GDObjPropType::Float),
-    152u16 => ("Random probablities list", GDObjPropType::Unknown),
+    152u16 => ("Random probabilities list", GDObjPropType::ProbabilitiesList),
     153u16 => ("Div by value X", GDObjPropType::Bool),
     154u16 => ("Div by value Y", GDObjPropType::Bool),
     193u16 => ("Grip slope?", GDObjPropType::Bool),
@@ -237,6 +238,7 @@ pub const PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map! {
     10035u16 => ("Reset camera?", GDObjPropType::Bool),
 };
 
+/// Get type of a property by ID
 pub fn get_property_type(p: u16) -> Option<GDObjPropType> {
     PROPERTY_TABLE.get(&p).map(|v| v.1)
 }

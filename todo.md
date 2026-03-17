@@ -1,0 +1,11 @@
+- improve tests
+- fix doc examples
+- revamp gdlevel with box optimization (for encrypted data) and better property map
+- make a level header string parser
+- fix issue 2
+- optimize default.rs file
+- add features: 
+    - `shorthand`: shorthand constructors
+        - on by default
+- add proper benchmarks
+- put object map inside of lookup.rs
