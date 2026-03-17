@@ -9,3 +9,5 @@
         - on by default
 - add proper benchmarks
 - put object map inside of lookup.rs
+- hashing of gd objects and levels
+- compartmentalization of crate via feature toggles

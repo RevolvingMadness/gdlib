@@ -1,5 +1,8 @@
 # Changelog
 
+## Update 0.3.2
+* Internal cleanup
+
 ## Update 0.3.1
 * Fixes to repository structure
     - added LICENSE
@@ -11,6 +14,7 @@
 * Fixed crate according to the cargo clippy linter
 * Optimized `GDObjAttributes` to be a single u32 via bitflags
 * Added PRNG support in the `rand` module
+* Fixed build script not working for docs.rs
 
 ## Update 0.3.0
 * Added various QOL improvements

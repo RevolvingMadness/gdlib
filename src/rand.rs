@@ -58,7 +58,7 @@ pub fn check_seed_random(seed: u64, chance: f64) -> bool {
 ///
 /// **WARNING**: This function may rarely, for an unknown reason, erroneously determine that
 /// a seed will activate a group when in reality, it won't. Please be mindful of this when checking seeds.
-pub fn check_seed_advanced_random(seed: u64, probabilities: GDValue) -> Option<Group> {
+pub fn check_seed_advanced_random(seed: u64, probabilities: &GDValue) -> Option<Group> {
     let prob_list;
     if let GDValue::ProbabilitiesList(probs) = probabilities {
         prob_list = probs;
