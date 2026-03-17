@@ -8,5 +8,4 @@
     - `shorthand`: shorthand constructors
         - on by default
 - add proper benchmarks
-- fix build script incorrectly generating file on docs.rs
 - put object map inside of lookup.rs

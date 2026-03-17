@@ -39,8 +39,8 @@ fn main() -> Result<(), GDError> {
         }
     }
 
-    // Export level to `group_42.gmd`
-    level.export_to_gmd("group_42.gmd")?;
+    // Export level
+    level.export_to_gmd("test_gmds/generated_group_42.gmd")?;
     Ok(())
 }
 ```

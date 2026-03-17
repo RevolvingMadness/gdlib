@@ -43,7 +43,7 @@ pub fn fast_rand_bits_norm(seed: u64) -> f64 {
 #[inline(always)]
 pub fn check_seed_random(seed: u64, chance: f64) -> bool {
     // Compare against the chance threshold
-    (fast_rand_bits_norm(seed) as f64) < chance
+    fast_rand_bits_norm(seed) < chance
 }
 
 /// Determines the group that an advanced random trigger will activate based on an input seed
