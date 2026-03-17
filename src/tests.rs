@@ -4,7 +4,7 @@ use std::time::Instant;
 use crate::{
     gdlevel::Level,
     gdobj::{
-        Event, GDObjConfig, MoveEasing,
+        Event, GDObjAttributes, GDObjConfig, MoveEasing,
         misc::default_block,
         triggers::{self, DefaultMove, advanced_random_trigger, move_trigger},
     },
@@ -34,7 +34,7 @@ fn read_objs() {
 fn move_constructor() {
     let mut level = Level::new("move trigger t3st", "gdlib", None, None);
     level.add_object(move_trigger(
-        &GDObjConfig::default().pos(45.0, 45.0).dont_fade(true),
+        &GDObjConfig::default().pos(45.0, 45.0),
         triggers::MoveMode::Default(DefaultMove {
             dx: 45.0,
             dy: 54.0,
@@ -70,12 +70,11 @@ fn level_display_test() {
 #[test]
 fn obj_properties() {
     let config = GDObjConfig::new()
-        .center_effect(true)
         .editor_layer_1(4)
-        .dont_fade(true)
+        .set_attribute_flag(GDObjAttributes::dont_fade, true)
         .groups([2, 3, 1738])
-        .extra_sticky(true)
-        .no_glow(true)
+        .set_attribute_flag(GDObjAttributes::extra_sticky, true)
+        .set_attribute_flag(GDObjAttributes::no_glow, true)
         .set_z_layer(crate::gdobj::ZLayer::B3)
         .set_base_colour(crate::gdobj::ColourChannel::Background);
 

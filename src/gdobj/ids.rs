@@ -226,7 +226,7 @@ pub mod properties {
     pub const GRAVITY: u16 = 148u16;
     pub const NEW_X_SCALE: u16 = 150u16;
     pub const NEW_Y_SCALE: u16 = 151u16;
-    pub const RANDOM_PROBABLITIES_LIST: u16 = 152u16;
+    pub const RANDOM_PROBABILITIES_LIST: u16 = 152u16;
     pub const DIV_BY_VALUE_X: u16 = 153u16;
     pub const DIV_BY_VALUE_Y: u16 = 154u16;
     pub const GRIP_SLOPE: u16 = 193u16;

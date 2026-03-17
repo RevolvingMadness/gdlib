@@ -15,6 +15,7 @@ use crate::gdobj::{
     },
     lookup::get_property_type,
 };
+use bitflags::bitflags;
 use itoa;
 use smallvec::SmallVec;
 
@@ -352,7 +353,7 @@ pub enum GDValue {
     ProbabilitiesList(smallvec::SmallVec<[(i16, i32); LIST_ALLOCSIZE]>),
     /// A [`MoveEasing`].
     Easing(MoveEasing),
-    /// A [`ColourChannel`]. It may be any of the built in ones, or one with an ID in the range of [1, 999]
+    /// A [`ColourChannel`]. It may be any of the built in ones, or one with an ID in the range of \[1, 999]
     ColourChannel(ColourChannel),
     /// A [`ZLayer`].
     ZLayer(ZLayer),
@@ -368,6 +369,7 @@ pub enum GDValue {
 /// Enum for all events that the event trigger can listen for
 pub enum Event {
     // zamn!! that's a lot of events
+    Unknown = 0,
     TinyLanding = 1,
     FeatherLanding = 2,
     SoftLanding = 3,
@@ -448,9 +450,9 @@ pub enum Event {
     FallSpeedHigh = 78,
 }
 
-impl Event {
+impl From<i32> for Event {
     /// Converts the event ID to the variant of the [`Event`] enum. Default to TinyLanding.
-    pub fn from_i32(i: i32) -> Self {
+    fn from(i: i32) -> Self {
         match i {
             1 => Self::TinyLanding,
             2 => Self::FeatherLanding,
@@ -529,9 +531,8 @@ impl Event {
             64 => Self::CheckpointRespawn,
             76 => Self::FallSpeedLow,
             77 => Self::FallSpeedMed,
-            // this will be the default because i said so
-            // it has event id 78
-            _ => Self::FallSpeedHigh,
+            78 => Self::FallSpeedHigh,
+            _ => Self::Unknown,
         }
     }
 }
@@ -575,7 +576,7 @@ impl GDValue {
             GDObjPropType::Int => Self::Int(parse!(s => i32)),
             GDObjPropType::EventsList => Self::Events(
                 s.split('.')
-                    .map(|i| Event::from_i32(parse!(i => i32)))
+                    .map(|i| Event::from(parse!(i => i32)))
                     .collect(),
             ),
             GDObjPropType::Group => Self::Group(parse!(s => i16)),
@@ -911,19 +912,13 @@ impl GDObject {
             };
 
             match idx_u16 {
-                OBJECT_ID => obj.id = val.parse().unwrap_or(0),
+                OBJECT_ID => obj.id = parse!(val => i32),
                 X_POS => obj.config.pos.0 = val.parse().unwrap_or(0.0),
                 Y_POS => obj.config.pos.1 = val.parse().unwrap_or(0.0),
                 ROTATION => obj.config.angle = val.parse().unwrap_or(0.0),
-                TOUCH_TRIGGERABLE => {
-                    obj.config.trigger_cfg.touchable = val.parse().unwrap_or(false)
-                }
-                SPAWN_TRIGGERABLE => {
-                    obj.config.trigger_cfg.spawnable = val.parse().unwrap_or(false)
-                }
-                MULTITRIGGERABLE => {
-                    obj.config.trigger_cfg.multitriggerable = val.parse().unwrap_or(false)
-                }
+                TOUCH_TRIGGERABLE => obj.config.trigger_cfg.touchable = parse!(val => bool),
+                SPAWN_TRIGGERABLE => obj.config.trigger_cfg.spawnable = parse!(val => bool),
+                MULTITRIGGERABLE => obj.config.trigger_cfg.multitriggerable = parse!(val => bool),
                 GROUPS => {
                     obj.config.add_groups(
                         val.trim_matches('"')
@@ -935,55 +930,115 @@ impl GDObject {
                 }
                 X_SCALE => obj.config.scale.0 = val.parse().unwrap_or(1.0),
                 Y_SCALE => obj.config.scale.1 = val.parse().unwrap_or(1.0),
-                EDITOR_LAYER_1 => obj.config.editor_layers.0 = val.parse().unwrap_or(0),
-                EDITOR_LAYER_2 => obj.config.editor_layers.1 = val.parse().unwrap_or(0),
+                EDITOR_LAYER_1 => obj.config.editor_layers.0 = parse!(val => i16),
+                EDITOR_LAYER_2 => obj.config.editor_layers.1 = parse!(val => i16),
                 OBJECT_COLOUR => {
-                    obj.config.colour_channels.0 = ColourChannel::from(val.parse().unwrap_or(0))
+                    obj.config.colour_channels.0 = ColourChannel::from(parse!(val => i16))
                 }
                 SECONDARY_COLOUR => {
-                    obj.config.colour_channels.1 = ColourChannel::from(val.parse().unwrap_or(0))
+                    obj.config.colour_channels.1 = ColourChannel::from(parse!(val => i16))
                 }
-                Z_LAYER => obj.config.z_layer = ZLayer::from(val.parse().unwrap_or(0)),
-                Z_ORDER => obj.config.z_order = val.parse().unwrap_or(0),
-                ENTER_EFFECT_CHANNEL => obj.config.enter_effect_channel = val.parse().unwrap_or(0),
-                OBJECT_MATERIAL => obj.config.material_id = val.parse().unwrap_or(0),
-                DONT_FADE => obj.config.attributes.dont_fade = val.parse().unwrap_or(false),
-                DONT_ENTER => obj.config.attributes.dont_enter = val.parse().unwrap_or(false),
-                NO_OBJECT_EFFECTS => {
-                    obj.config.attributes.no_effects = val.parse().unwrap_or(false)
-                }
-                IS_GROUP_PARENT => {
-                    obj.config.attributes.is_group_parent = val.parse().unwrap_or(false)
-                }
-                IS_AREA_PARENT => {
-                    obj.config.attributes.is_area_parent = val.parse().unwrap_or(false)
-                }
-                DONT_BOOST_X => obj.config.attributes.dont_boost_x = val.parse().unwrap_or(false),
-                DONT_BOOST_Y => obj.config.attributes.dont_boost_y = val.parse().unwrap_or(false),
-                IS_HIGH_DETAIL => obj.config.attributes.high_detail = val.parse().unwrap_or(false),
-                NO_TOUCH => obj.config.attributes.no_touch = val.parse().unwrap_or(false),
-                PASSABLE => obj.config.attributes.passable = val.parse().unwrap_or(false),
-                HIDDEN => obj.config.attributes.hidden = val.parse().unwrap_or(false),
-                NONSTICK_X => obj.config.attributes.non_stick_x = val.parse().unwrap_or(false),
-                NONSTICK_Y => obj.config.attributes.non_stick_y = val.parse().unwrap_or(false),
-                EXTRA_STICKY => obj.config.attributes.extra_sticky = val.parse().unwrap_or(false),
-                HAS_EXTENDED_COLLISION => {
-                    obj.config.attributes.extended_collision = val.parse().unwrap_or(false)
-                }
-                IS_ICE_BLOCK => obj.config.attributes.is_ice_block = val.parse().unwrap_or(false),
-                GRIP_SLOPE => obj.config.attributes.grip_slope = val.parse().unwrap_or(false),
-                NO_GLOW => obj.config.attributes.no_glow = val.parse().unwrap_or(false),
-                NO_PARTICLES => obj.config.attributes.no_particles = val.parse().unwrap_or(false),
-                SCALE_STICK => obj.config.attributes.scale_stick = val.parse().unwrap_or(false),
-                NO_AUDIO_SCALE => {
-                    obj.config.attributes.no_audio_scale = val.parse().unwrap_or(false)
-                }
-                SINGLE_PLAYER_TOUCH => {
-                    obj.config.attributes.single_ptouch = val.parse().unwrap_or(false)
-                }
-                CENTER_EFFECT => obj.config.attributes.center_effect = val.parse().unwrap_or(false),
-                REVERSES_GAMEPLAY => obj.config.attributes.reverse = val.parse().unwrap_or(false),
-                MATERIAL_CONTROL_ID => obj.config.control_id = val.parse().unwrap_or(0),
+                Z_LAYER => obj.config.z_layer = ZLayer::from(parse!(val => i32)),
+                Z_ORDER => obj.config.z_order = parse!(val => i32),
+                ENTER_EFFECT_CHANNEL => obj.config.enter_effect_channel = parse!(val => i16),
+                OBJECT_MATERIAL => obj.config.material_id = parse!(val => i16),
+                DONT_FADE => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::dont_fade, parse!(val => bool)),
+                DONT_ENTER => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::dont_enter, parse!(val => bool)),
+                NO_OBJECT_EFFECTS => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::no_effects, parse!(val => bool)),
+                IS_GROUP_PARENT => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::is_group_parent, parse!(val => bool)),
+                IS_AREA_PARENT => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::is_area_parent, parse!(val => bool)),
+                DONT_BOOST_X => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::dont_boost_x, parse!(val => bool)),
+                DONT_BOOST_Y => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::dont_boost_y, parse!(val => bool)),
+                IS_HIGH_DETAIL => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::high_detail, parse!(val => bool)),
+                NO_TOUCH => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::no_touch, parse!(val => bool)),
+                PASSABLE => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::passable, parse!(val => bool)),
+                HIDDEN => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::hidden, parse!(val => bool)),
+                NONSTICK_X => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::non_stick_x, parse!(val => bool)),
+                NONSTICK_Y => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::non_stick_y, parse!(val => bool)),
+                EXTRA_STICKY => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::extra_sticky, parse!(val => bool)),
+                HAS_EXTENDED_COLLISION => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::extended_collision, parse!(val => bool)),
+                IS_ICE_BLOCK => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::is_ice_block, parse!(val => bool)),
+                GRIP_SLOPE => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::grip_slope, parse!(val => bool)),
+                NO_GLOW => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::no_glow, parse!(val => bool)),
+                NO_PARTICLES => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::no_particles, parse!(val => bool)),
+                SCALE_STICK => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::scale_stick, parse!(val => bool)),
+                NO_AUDIO_SCALE => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::no_audio_scale, parse!(val => bool)),
+                SINGLE_PLAYER_TOUCH => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::single_ptouch, parse!(val => bool)),
+                CENTER_EFFECT => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::center_effect, parse!(val => bool)),
+                REVERSES_GAMEPLAY => obj
+                    .config
+                    .attributes
+                    .set(GDObjAttributes::reverse, parse!(val => bool)),
+                MATERIAL_CONTROL_ID => obj.config.control_id = parse!(val => i16),
                 PARENT_GROUPS => {
                     // add groups method handles deduping
                     obj.config.add_groups(
@@ -1076,8 +1131,13 @@ impl GDObject {
 
     #[inline]
     /// Creates a default object from the specified ID
-    pub fn from_id(id: i32) -> Self {
+    pub fn default_from_id(id: i32) -> Self {
         defaults::default_object(id)
+    }
+
+    #[inline(always)]
+    fn get_attr_as_gdvalue(&self, attr: GDObjAttributes) -> GDValue {
+        GDValue::Bool(self.config.get_attribute_flag(attr))
     }
 
     /// Fetches a property from this object's configuration
@@ -1102,31 +1162,32 @@ impl GDObject {
             25 => Some(GDValue::Int(self.config.z_order)),
             343 => Some(GDValue::Short(self.config.enter_effect_channel)),
             446 => Some(GDValue::Short(self.config.material_id)),
-            64 => Some(GDValue::Bool(self.config.attributes.dont_fade)),
-            67 => Some(GDValue::Bool(self.config.attributes.dont_enter)),
-            116 => Some(GDValue::Bool(self.config.attributes.no_effects)),
-            34 => Some(GDValue::Bool(self.config.attributes.is_group_parent)),
-            279 => Some(GDValue::Bool(self.config.attributes.is_area_parent)),
-            509 => Some(GDValue::Bool(self.config.attributes.dont_boost_x)),
-            496 => Some(GDValue::Bool(self.config.attributes.dont_boost_y)),
-            103 => Some(GDValue::Bool(self.config.attributes.high_detail)),
-            121 => Some(GDValue::Bool(self.config.attributes.no_touch)),
-            134 => Some(GDValue::Bool(self.config.attributes.passable)),
-            135 => Some(GDValue::Bool(self.config.attributes.hidden)),
-            136 => Some(GDValue::Bool(self.config.attributes.non_stick_x)),
-            289 => Some(GDValue::Bool(self.config.attributes.non_stick_y)),
-            495 => Some(GDValue::Bool(self.config.attributes.extra_sticky)),
-            511 => Some(GDValue::Bool(self.config.attributes.extended_collision)),
-            137 => Some(GDValue::Bool(self.config.attributes.is_ice_block)),
-            193 => Some(GDValue::Bool(self.config.attributes.grip_slope)),
-            96 => Some(GDValue::Bool(self.config.attributes.no_glow)),
-            507 => Some(GDValue::Bool(self.config.attributes.no_particles)),
-            356 => Some(GDValue::Bool(self.config.attributes.scale_stick)),
-            372 => Some(GDValue::Bool(self.config.attributes.no_audio_scale)),
-            284 => Some(GDValue::Bool(self.config.attributes.single_ptouch)),
-            369 => Some(GDValue::Bool(self.config.attributes.center_effect)),
-            117 => Some(GDValue::Bool(self.config.attributes.reverse)),
             534 => Some(GDValue::Short(self.config.control_id)),
+            64 => Some(self.get_attr_as_gdvalue(GDObjAttributes::dont_fade)),
+            67 => Some(self.get_attr_as_gdvalue(GDObjAttributes::dont_enter)),
+            116 => Some(self.get_attr_as_gdvalue(GDObjAttributes::no_effects)),
+            34 => Some(self.get_attr_as_gdvalue(GDObjAttributes::is_group_parent)),
+            279 => Some(self.get_attr_as_gdvalue(GDObjAttributes::is_area_parent)),
+            509 => Some(self.get_attr_as_gdvalue(GDObjAttributes::dont_boost_x)),
+            496 => Some(self.get_attr_as_gdvalue(GDObjAttributes::dont_boost_y)),
+            103 => Some(self.get_attr_as_gdvalue(GDObjAttributes::high_detail)),
+            121 => Some(self.get_attr_as_gdvalue(GDObjAttributes::no_touch)),
+            134 => Some(self.get_attr_as_gdvalue(GDObjAttributes::passable)),
+            135 => Some(self.get_attr_as_gdvalue(GDObjAttributes::hidden)),
+            136 => Some(self.get_attr_as_gdvalue(GDObjAttributes::non_stick_x)),
+            289 => Some(self.get_attr_as_gdvalue(GDObjAttributes::non_stick_y)),
+            495 => Some(self.get_attr_as_gdvalue(GDObjAttributes::extra_sticky)),
+            511 => Some(self.get_attr_as_gdvalue(GDObjAttributes::extended_collision)),
+            137 => Some(self.get_attr_as_gdvalue(GDObjAttributes::is_ice_block)),
+            193 => Some(self.get_attr_as_gdvalue(GDObjAttributes::grip_slope)),
+            96 => Some(self.get_attr_as_gdvalue(GDObjAttributes::no_glow)),
+            507 => Some(self.get_attr_as_gdvalue(GDObjAttributes::no_particles)),
+            356 => Some(self.get_attr_as_gdvalue(GDObjAttributes::scale_stick)),
+            372 => Some(self.get_attr_as_gdvalue(GDObjAttributes::no_audio_scale)),
+            284 => Some(self.get_attr_as_gdvalue(GDObjAttributes::single_ptouch)),
+            369 => Some(self.get_attr_as_gdvalue(GDObjAttributes::center_effect)),
+            117 => Some(self.get_attr_as_gdvalue(GDObjAttributes::reverse)),
+
             _ => self
                 .properties
                 .iter()
@@ -1515,207 +1576,73 @@ impl GDObjConfig {
         self
     }
 
-    ////////////////////// ATTRIBUTES DOWN HERE
-
-    /// Enables `dont_fade` on this object.
-    #[inline(always)]
-    pub fn dont_fade(mut self, toggle: bool) -> Self {
-        self.attributes.dont_fade = toggle;
-        self
+    /// Gets the value of a set attribute flag.  
+    /// The flag is only true if it has been set as such. Unset flags return false.
+    pub fn get_attribute_flag(&self, flag: GDObjAttributes) -> bool {
+        self.attributes.contains(flag)
     }
 
-    /// Enables `dont_enter` on this object.
-    #[inline(always)]
-    pub fn dont_enter(mut self, toggle: bool) -> Self {
-        self.attributes.dont_enter = toggle;
-        self
-    }
-
-    /// Enables `no_effects` on this object.
-    #[inline(always)]
-    pub fn no_effects(mut self, toggle: bool) -> Self {
-        self.attributes.no_effects = toggle;
-        self
-    }
-
-    /// Enables `is_group_parent` on this object.
-    #[inline(always)]
-    pub fn is_group_parent(mut self, toggle: bool) -> Self {
-        self.attributes.is_group_parent = toggle;
-        self
-    }
-
-    /// Enables `is_area_parent` on this object.
-    #[inline(always)]
-    pub fn is_area_parent(mut self, toggle: bool) -> Self {
-        self.attributes.is_area_parent = toggle;
-        self
-    }
-
-    /// Enables `dont_boost_x` on this object.
-    #[inline(always)]
-    pub fn dont_boost_x(mut self, toggle: bool) -> Self {
-        self.attributes.dont_boost_x = toggle;
-        self
-    }
-
-    /// Enables `dont_boost_y` on this object.
-    #[inline(always)]
-    pub fn dont_boost_y(mut self, toggle: bool) -> Self {
-        self.attributes.dont_boost_y = toggle;
-        self
-    }
-
-    /// Enables `high_detail` on this object.
-    #[inline(always)]
-    pub fn high_detail(mut self, toggle: bool) -> Self {
-        self.attributes.high_detail = toggle;
-        self
-    }
-
-    /// Enables `no_touch` on this object.
-    #[inline(always)]
-    pub fn no_touch(mut self, toggle: bool) -> Self {
-        self.attributes.no_touch = toggle;
-        self
-    }
-
-    /// Enables `passable` on this object.
-    #[inline(always)]
-    pub fn passable(mut self, toggle: bool) -> Self {
-        self.attributes.passable = toggle;
-        self
-    }
-
-    /// Enables `hidden` on this object.
-    #[inline(always)]
-    pub fn hidden(mut self, toggle: bool) -> Self {
-        self.attributes.hidden = toggle;
-        self
-    }
-
-    /// Enables `non_stick_x` on this object.
-    #[inline(always)]
-    pub fn non_stick_x(mut self, toggle: bool) -> Self {
-        self.attributes.non_stick_x = toggle;
-        self
-    }
-
-    /// Enables `non_stick_y` on this object.
-    #[inline(always)]
-    pub fn non_stick_y(mut self, toggle: bool) -> Self {
-        self.attributes.non_stick_y = toggle;
-        self
-    }
-
-    /// Enables `extra_sticky` on this object.
-    #[inline(always)]
-    pub fn extra_sticky(mut self, toggle: bool) -> Self {
-        self.attributes.extra_sticky = toggle;
-        self
-    }
-
-    /// Enables `extended_collision` on this object.
-    #[inline(always)]
-    pub fn extended_collision(mut self, toggle: bool) -> Self {
-        self.attributes.extended_collision = toggle;
-        self
-    }
-
-    /// Enables `is_ice_block` on this object.
-    #[inline(always)]
-    pub fn is_ice_block(mut self, toggle: bool) -> Self {
-        self.attributes.is_ice_block = toggle;
-        self
-    }
-
-    /// Enables `grip_slope` on this object.
-    #[inline(always)]
-    pub fn grip_slope(mut self, toggle: bool) -> Self {
-        self.attributes.grip_slope = toggle;
-        self
-    }
-
-    /// Enables `no_glow` on this object.
-    #[inline(always)]
-    pub fn no_glow(mut self, toggle: bool) -> Self {
-        self.attributes.no_glow = toggle;
-        self
-    }
-
-    /// Enables `no_particles` on this object.
-    #[inline(always)]
-    pub fn no_particles(mut self, toggle: bool) -> Self {
-        self.attributes.no_particles = toggle;
-        self
-    }
-
-    /// Enables `scale_stick` on this object.
-    #[inline(always)]
-    pub fn scale_stick(mut self, toggle: bool) -> Self {
-        self.attributes.scale_stick = toggle;
-        self
-    }
-
-    /// Enables `no_audio_scale` on this object.
-    #[inline(always)]
-    pub fn no_audio_scale(mut self, toggle: bool) -> Self {
-        self.attributes.no_audio_scale = toggle;
-        self
-    }
-
-    /// Enables `single_ptouch` on this object.
-    /// If enabled, this object will ignore the second player's input
-    /// if both player inputs are pressed on the same tick.
-    #[inline(always)]
-    pub fn single_ptouch(mut self, toggle: bool) -> Self {
-        self.attributes.single_ptouch = toggle;
-        self
-    }
-
-    /// Enables `center_effect` on this object.
-    #[inline(always)]
-    pub fn center_effect(mut self, toggle: bool) -> Self {
-        self.attributes.center_effect = toggle;
-        self
-    }
-
-    /// Enables `reverse` on this object.
-    #[inline(always)]
-    pub fn reverse(mut self, toggle: bool) -> Self {
-        self.attributes.reverse = toggle;
+    /// Sets the attribute of the specified flag. Function is useable in builder syntax.
+    pub fn set_attribute_flag(mut self, flag: GDObjAttributes, toggle: bool) -> Self {
+        self.attributes.set(flag, toggle);
         self
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Default)]
-#[allow(missing_docs)]
-/// Common attributes container struct
-pub struct GDObjAttributes {
-    pub dont_fade: bool,
-    pub dont_enter: bool,
-    pub no_effects: bool,
-    pub is_group_parent: bool,
-    pub is_area_parent: bool,
-    pub dont_boost_x: bool,
-    pub dont_boost_y: bool,
-    pub high_detail: bool,
-    pub no_touch: bool,
-    pub passable: bool,
-    pub hidden: bool,
-    pub non_stick_x: bool,
-    pub non_stick_y: bool,
-    pub extra_sticky: bool,
-    pub extended_collision: bool,
-    pub is_ice_block: bool,
-    pub grip_slope: bool,
-    pub no_glow: bool,
-    pub no_particles: bool,
-    pub scale_stick: bool,
-    pub no_audio_scale: bool,
-    pub single_ptouch: bool,
-    pub center_effect: bool,
-    pub reverse: bool,
+bitflags! {
+    /// Common attributes container struct
+    #[derive(Debug, Clone, PartialEq, Default, Eq, Hash)]
+    // #[allow(missing_docs)] won't work here for some odd reason
+    pub struct GDObjAttributes: u32 {
+        /// @nodoc
+        const dont_fade          = 1;
+        /// @nodoc
+        const dont_enter         = 1 << 1;
+        /// @nodoc
+        const no_effects         = 1 << 2;
+        /// @nodoc
+        const is_group_parent    = 1 << 3;
+        /// @nodoc
+        const is_area_parent     = 1 << 4;
+        /// @nodoc
+        const dont_boost_x       = 1 << 5;
+        /// @nodoc
+        const dont_boost_y       = 1 << 6;
+        /// @nodoc
+        const high_detail        = 1 << 7;
+        /// @nodoc
+        const no_touch           = 1 << 8;
+        /// @nodoc
+        const passable           = 1 << 9;
+        /// @nodoc
+        const hidden             = 1 << 10;
+        /// @nodoc
+        const non_stick_x        = 1 << 11;
+        /// @nodoc
+        const non_stick_y        = 1 << 12;
+        /// @nodoc
+        const extra_sticky       = 1 << 13;
+        /// @nodoc
+        const extended_collision = 1 << 14;
+        /// @nodoc
+        const is_ice_block       = 1 << 15;
+        /// @nodoc
+        const grip_slope         = 1 << 16;
+        /// @nodoc
+        const no_glow            = 1 << 17;
+        /// @nodoc
+        const no_particles       = 1 << 18;
+        /// @nodoc
+        const scale_stick        = 1 << 19;
+        /// @nodoc
+        const no_audio_scale     = 1 << 20;
+        /// @nodoc
+        const single_ptouch      = 1 << 21;
+        /// @nodoc
+        const center_effect      = 1 << 22;
+        /// @nodoc
+        const reverse            = 1 << 23;
+    }
 }
 
 impl GDObjAttributes {
@@ -1728,35 +1655,35 @@ impl GDObjAttributes {
     /// Serialises this object to a string
     pub fn get_property_str(&self) -> String {
         let fields = [
-            (DONT_FADE, self.dont_fade),
-            (DONT_ENTER, self.dont_enter),
-            (NO_OBJECT_EFFECTS, self.no_effects),
-            (IS_GROUP_PARENT, self.is_group_parent),
-            (IS_AREA_PARENT, self.is_area_parent),
-            (DONT_BOOST_X, self.dont_boost_x),
-            (DONT_BOOST_Y, self.dont_boost_y),
-            (IS_HIGH_DETAIL, self.high_detail),
-            (NO_TOUCH, self.no_touch),
-            (PASSABLE, self.passable),
-            (HIDDEN, self.hidden),
-            (NONSTICK_X, self.non_stick_x),
-            (NONSTICK_Y, self.non_stick_y),
-            (EXTRA_STICKY, self.extra_sticky),
-            (HAS_EXTENDED_COLLISION, self.extended_collision),
-            (IS_ICE_BLOCK, self.is_ice_block),
-            (GRIP_SLOPE, self.grip_slope),
-            (NO_GLOW, self.no_glow),
-            (NO_PARTICLES, self.no_particles),
-            (SCALE_STICK, self.scale_stick),
-            (NO_AUDIO_SCALE, self.no_audio_scale),
-            (SINGLE_PLAYER_TOUCH, self.single_ptouch),
-            (CENTER_EFFECT, self.center_effect),
-            (REVERSES_GAMEPLAY, self.reverse),
+            (DONT_FADE, Self::dont_fade),
+            (DONT_ENTER, Self::dont_enter),
+            (NO_OBJECT_EFFECTS, Self::no_effects),
+            (IS_GROUP_PARENT, Self::is_group_parent),
+            (IS_AREA_PARENT, Self::is_area_parent),
+            (DONT_BOOST_X, Self::dont_boost_x),
+            (DONT_BOOST_Y, Self::dont_boost_y),
+            (IS_HIGH_DETAIL, Self::high_detail),
+            (NO_TOUCH, Self::no_touch),
+            (PASSABLE, Self::passable),
+            (HIDDEN, Self::hidden),
+            (NONSTICK_X, Self::non_stick_x),
+            (NONSTICK_Y, Self::non_stick_y),
+            (EXTRA_STICKY, Self::extra_sticky),
+            (HAS_EXTENDED_COLLISION, Self::extended_collision),
+            (IS_ICE_BLOCK, Self::is_ice_block),
+            (GRIP_SLOPE, Self::grip_slope),
+            (NO_GLOW, Self::no_glow),
+            (NO_PARTICLES, Self::no_particles),
+            (SCALE_STICK, Self::scale_stick),
+            (NO_AUDIO_SCALE, Self::no_audio_scale),
+            (SINGLE_PLAYER_TOUCH, Self::single_ptouch),
+            (CENTER_EFFECT, Self::center_effect),
+            (REVERSES_GAMEPLAY, Self::reverse),
         ];
         let mut properties_str = String::with_capacity(6 * fields.len());
 
-        for (id, val) in fields {
-            if val {
+        for (id, flag) in fields {
+            if self.contains(flag) {
                 let _ = write!(properties_str, ",{id},1");
             }
         }

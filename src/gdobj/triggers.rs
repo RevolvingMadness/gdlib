@@ -40,7 +40,7 @@ use crate::gdobj::{
             MULTIACTIVATABLE_TIME_EVENT, NEW_X_SCALE, NEW_Y_SCALE, NO_END_EFFECTS,
             NO_END_SOUND_EFFECTS, NO_LEGACY_HSV, ONLY_MOVE, OPACITY, PAUSE_AT_TARGET_TIME,
             PULSE_DETAIL_COLOUR_ONLY, PULSE_FADE_IN_TIME, PULSE_FADE_OUT_TIME, PULSE_GROUP,
-            PULSE_HOLD_TIME, PULSE_MAIN_COLOUR_ONLY, RANDOM_PROBABLITIES_LIST, RED,
+            PULSE_HOLD_TIME, PULSE_MAIN_COLOUR_ONLY, RANDOM_PROBABILITIES_LIST, RED,
             RELATIVE_ROTATION, RELATIVE_SCALE, RESET_CAMERA, RESET_ITEM_TO_0, RESET_REMAP,
             REVERSE_GAMEPLAY, RIGHT_OPERATOR, RIGHT_ROUND_MODE, RIGHT_SIGN_MODE, ROTATE_DEGREES,
             ROTATE_GAMEPLAY, ROTATE_X360, ROTATION_OF_SPAWNED_PARTICLES, ROTATION_OFFSET,
@@ -1954,7 +1954,7 @@ pub fn advanced_random_trigger(config: &GDObjConfig, probabilities: Vec<(i16, i3
         TRIGGER_ADVANCED_RANDOM,
         config,
         vec![(
-            RANDOM_PROBABLITIES_LIST,
+            RANDOM_PROBABILITIES_LIST,
             GDValue::from_prob_list(probabilities),
         )],
     )
@@ -2113,7 +2113,7 @@ pub fn scale_trigger(
 /// Returns a scale trigger
 /// # Arguments
 /// * `config`: General object options, such as position and scale
-/// * `speed`: Follow speed in the range [0.0, 1.0]; 1.0 = instantaneously snaps to player y-pos
+/// * `speed`: Follow speed in the range \[0.0, 1.0]; 1.0 = instantaneously snaps to player y-pos
 /// * `delay`: Delay of the following group
 /// * `offset`: Y offset of the following group
 /// * `max_speed`: Speed limit of the following group

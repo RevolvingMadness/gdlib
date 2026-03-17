@@ -10,6 +10,4 @@
 - release v0.3.1 on github
 - add proper benchmarks
 - fix build script incorrectly generating file on docs.rs
-- gdobjattributes as bitflags optimization
 - put object map inside of lookup.rs
-- finish fixing crate according to cargo clippy lint
