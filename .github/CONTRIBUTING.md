@@ -5,7 +5,7 @@ Thanks for wanting to contribute! All contribution must be made through a pull r
 - Include a short title, preferably one sentence long, that is informative of the core issue.
 - In the description, state exactly what went wrong to the best of your ability.
 - If applicable, please provide the program output. 
-- Please ensure that your code passes `cargo test` and `cargo clippy`
+- Please ensure that your code passes `cargo test` and that `cargo clippy` emits no warnings or errors.
 
 ## Feature request
 - Title the PR: "Feature Request: \<your feature>"

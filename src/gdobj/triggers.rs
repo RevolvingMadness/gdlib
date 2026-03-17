@@ -4,6 +4,8 @@
 
 use std::fmt::Display;
 
+use anyhow::anyhow;
+
 use crate::gdobj::{
     Anim, ColourChannel, Event, GDObjConfig, GDObject, GDValue, Item, MoveEasing,
     ids::{
@@ -85,9 +87,10 @@ pub enum MoveTarget {
 
 /// Enum for the GD gamemodes corresponding to their internal values
 #[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[allow(missing_docs)]
 pub enum Gamemode {
+    #[default]
     Cube = 0,
     Ship = 1,
     Ball = 2,
@@ -327,10 +330,11 @@ pub struct DirectionalMove {
 
 /// Enum for starting speed in a startpos
 #[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[allow(missing_docs)]
 pub enum StartingSpeed {
     X0Point5 = 1,
+    #[default]
     X1 = 0,
     X2 = 2,
     X3 = 3,
@@ -396,7 +400,7 @@ pub struct PulseGroup {
 /// Enum for pulse mode
 pub enum PulseMode {
     /// Pulse with colour
-    Colour(PulseColour),
+    Colour(Colour),
     /// Pulse with HSV
     HSV(PulseHSV),
 }
@@ -404,10 +408,41 @@ pub enum PulseMode {
 /// RGB colour tuple
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[allow(missing_docs)]
-pub struct PulseColour {
+pub struct Colour {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
+}
+
+impl Colour {
+    /// Converts an RGB tuple to a [`Colour`]
+    pub fn from_rgb(rgb: (u8, u8, u8)) -> Self {
+        Self {
+            red: rgb.0,
+            green: rgb.1,
+            blue: rgb.2,
+        }
+    }
+
+    /// Parses a hex code (#123456) to a [`Colour`]
+    pub fn from_hex<S: AsRef<str>>(hex_str: S) -> Result<Self, anyhow::Error> {
+        let str = hex_str.as_ref();
+        if str.len() != 7 || !str.starts_with('#') {
+            return Err(anyhow!(
+                "Hex code must start with a hashtag followed by a 6-digit RGB hex tuple."
+            ));
+        }
+
+        let mut owned = str.to_string();
+        owned.remove(0);
+
+        let hex = i32::from_str_radix(&owned, 16)?;
+        Ok(Self {
+            red: (hex >> 16 & 0xFF) as u8,
+            green: (hex >> 8 & 0xFF) as u8,
+            blue: (hex & 0xFF) as u8,
+        })
+    }
 }
 
 /// Configuration struct for scaling of objects in the scale trigger
@@ -501,10 +536,21 @@ pub struct TimeTriggerConfig {
 
 /// Degree amount rotation specifier
 #[derive(Debug, Clone, Copy, PartialEq)]
-#[allow(missing_docs)]
 pub struct RotationNormal {
+    /// Amount of degrees
     pub degrees: f64,
+    /// Amount of full rotations. Specifying these is preferred to specifying an overly large number of degrees.
     pub x360: i32,
+}
+
+impl RotationNormal {
+    /// Convert from degrees to this object.
+    pub fn from_degrees(deg: f64) -> Self {
+        Self {
+            degrees: deg % 360.0,
+            x360: (deg as i32 / 360),
+        }
+    }
 }
 
 /// Optional target of rotation
@@ -524,6 +570,90 @@ pub struct RotationAim {
     pub rot_offset: f64,
     ///  Overrides aim_target if not None, uses either P1 or P2 as the target instead.
     pub player_target: Option<RotationPlayerTarget>,
+}
+
+/// Configuration descriptor for spawning particles in particle spawn trigger
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
+pub struct ParticleSpawnConfig {
+    /// (x, y) tuple for offsets from their original spawn location.
+    ///   Note: all particle objects spawn in the same position, regardless of their offsets within their group.
+    pub position_offsets: Option<(i32, i32)>,
+    /// (x, y) tuple for range of possible random positional variation.
+    pub position_variation: Option<(i32, i32)>,
+    /// (rotation, variation) tuple that describes the rotation of the particles + random offset range
+    pub rotation_config: Option<(i32, i32)>,
+    /// (scale, variation) tuple that describes the scale of the particles + random offset range
+    pub scale_config: Option<(f64, f64)>,
+    /// Makes all of the particles in the group be rotated in the same direction.
+    pub match_rotation: bool,
+}
+
+/// Gameplay starting settings specification struct for the startpos trigger
+#[derive(Debug, Default, Clone, Copy)]
+pub struct StartposConfig {
+    /// Starting speed of player
+    pub start_speed: StartingSpeed,
+    /// Starting gamemode; Default: Cube
+    pub starting_gamemode: Gamemode,
+    /// Starting as mini? Default: false
+    pub starting_as_mini: bool,
+    /// Start as dual? Default: false
+    pub starting_as_dual: bool,
+    /// Start as mirrored? Default: false
+    pub starting_mirrored: bool,
+    /// Reset camera? Default: false
+    pub reset_camera: bool,
+    /// Rotate gameplay? Default: false
+    pub rotate_gameplay: bool,
+    /// Reverse gameplay? Default: false
+    pub reverse_gameplay: bool,
+}
+
+/// Configuration struct for collide triggers which specifies the colliders
+/// that are checked for collisions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ColliderConfig {
+    /// ID of first collision block
+    pub collider1: i16,
+    /// ID of second collision block
+    pub collider2: i16,
+    /// Whether to check for collision with player 1 instead of collider 1
+    pub collide_player1: bool,
+    /// Whether to check for collision with player 2 instead of collider 1.
+    ///   Does not override collision checking with player 1 if `collide_player1` is also true.
+    pub collide_player2: bool,
+    /// Whether to check for collision between the two players instead of two collision blocks
+    pub collide_both_players: bool,
+}
+
+impl ColliderConfig {
+    /// Creates a new instance of this object from two collision block IDs
+    pub fn two_colliders(collider1_id: i16, collider2_id: i16) -> Self {
+        Self {
+            collider1: collider1_id,
+            collider2: collider2_id,
+            collide_player1: false,
+            collide_player2: false,
+            collide_both_players: false,
+        }
+    }
+}
+
+/// Configuration struct for the primary colour operation in a colour trigger
+#[derive(Debug, Clone, Copy)]
+pub struct ColourTriggerConfig {
+    /// (R, G, B) tuple of `u8`s
+    pub colour: Colour,
+    /// Channel whose colour will be changed
+    pub channel: ColourChannel,
+    /// Opacity of colour
+    pub opacity: f64,
+    /// Use blending?
+    pub blending: bool,
+    /// Use player colour 1 instead of the specified colour.
+    pub use_player_col_1: bool,
+    /// Use player colour 2 instead of the specified colour.
+    pub use_player_col_2: bool,
 }
 
 /// Returns a move trigger object
@@ -623,27 +753,13 @@ pub fn move_trigger(
 ///
 /// # Arguments
 /// * `config`: General object options, such as position and scale
-/// * `start_speed`: Starting speed of player: will be clamped to closest value in `[0.5, 1.0, 2.0, 3.0, 4.0]`
-/// * `starting_gamemode`: Starting gamemode; Default: Cube
-/// * `starting_as_mini`: Starting as mini? Default: false
-/// * `starting_as_dual`: Start as dual? Default: false
-/// * `starting_mirrored`: Start as mirrored? Default: false
-/// * `reset_camera`: Reset camera? Default: false
-/// * `rotate_gameplay`: Rotate gameplay? Default: false
-/// * `reverse_gameplay`: Reverse gameplay? Default: false
+/// * `gameplay_settings`: Gameplay options for startpos
 /// * `target_order`: Target order (of what, I don't know); Default: 0
 /// * `target_channel`: Target channel (once again, I don't know); Default: 0
 /// * `disabled`: Disabled startpos? Default: false
 pub fn start_pos(
     config: &GDObjConfig,
-    start_speed: StartingSpeed,
-    starting_gamemode: Gamemode,
-    starting_as_mini: bool,
-    starting_as_dual: bool,
-    starting_mirrored: bool,
-    reset_camera: bool,
-    rotate_gameplay: bool,
-    reverse_gameplay: bool,
+    gameplay_settings: StartposConfig,
     target_order: i32,
     target_channel: i32,
     disabled: bool,
@@ -652,17 +768,38 @@ pub fn start_pos(
         START_POS,
         config,
         vec![
-            (STARTING_SPEED, GDValue::Int(start_speed as i32)),
-            (STARTING_GAMEMODE, GDValue::Int(starting_gamemode as i32)),
-            (STARTING_IN_MINI_MODE, GDValue::Bool(starting_as_mini)),
-            (STARTING_IN_DUAL_MODE, GDValue::Bool(starting_as_dual)),
+            (
+                STARTING_SPEED,
+                GDValue::Int(gameplay_settings.start_speed as i32),
+            ),
+            (
+                STARTING_GAMEMODE,
+                GDValue::Int(gameplay_settings.starting_gamemode as i32),
+            ),
+            (
+                STARTING_IN_MINI_MODE,
+                GDValue::Bool(gameplay_settings.starting_as_mini),
+            ),
+            (
+                STARTING_IN_DUAL_MODE,
+                GDValue::Bool(gameplay_settings.starting_as_dual),
+            ),
             (IS_DISABLED, GDValue::Bool(disabled)),
-            (STARTING_IN_MIRROR_MODE, GDValue::Bool(starting_mirrored)),
-            (ROTATE_GAMEPLAY, GDValue::Bool(rotate_gameplay)),
-            (REVERSE_GAMEPLAY, GDValue::Bool(reverse_gameplay)),
+            (
+                STARTING_IN_MIRROR_MODE,
+                GDValue::Bool(gameplay_settings.starting_mirrored),
+            ),
+            (
+                ROTATE_GAMEPLAY,
+                GDValue::Bool(gameplay_settings.rotate_gameplay),
+            ),
+            (
+                REVERSE_GAMEPLAY,
+                GDValue::Bool(gameplay_settings.reverse_gameplay),
+            ),
             (TARGET_ORDER, GDValue::Int(target_order)),
             (TARGET_CHANNEL, GDValue::Int(target_channel)),
-            (RESET_CAMERA, GDValue::Bool(reset_camera)),
+            (RESET_CAMERA, GDValue::Bool(gameplay_settings.reset_camera)),
             (10010, GDValue::Int(0)),
             (10011, GDValue::String(String::new())),
             (10022, GDValue::Int(0)),
@@ -693,34 +830,30 @@ pub fn start_pos(
 ///
 /// # Arguments
 /// * `config`: General object options, such as position and scale
-/// * `colour`: (R, G, B) tuple of `u8`s
 /// * `fade_time`: Time to fade into the colour
-/// * `opacity`: Opacity of colour
-/// * `blending`: Use blending?
-/// * `use_player_col_1`: Use player colour 1 instead of the specified colour.
-/// * `use_player_col_2`: Use player colour 2 instead of the specified colour.
 /// * `copy_colour`: Optional [`CopyColourConfig`]
 pub fn colour_trigger(
     config: &GDObjConfig,
-    colour: (u8, u8, u8),
-    channel: ColourChannel,
+    colour_cfg: ColourTriggerConfig,
     fade_time: f64,
-    opacity: f64,
-    blending: bool,
-    use_player_col_1: bool,
-    use_player_col_2: bool,
     copy_colour: Option<CopyColourConfig>,
 ) -> GDObject {
     let mut properties = vec![
-        (RED, GDValue::Int(colour.0 as i32)),
-        (GREEN, GDValue::Int(colour.1 as i32)),
-        (BLUE, GDValue::Int(colour.2 as i32)),
+        (RED, GDValue::Int(colour_cfg.colour.red as i32)),
+        (GREEN, GDValue::Int(colour_cfg.colour.green as i32)),
+        (BLUE, GDValue::Int(colour_cfg.colour.blue as i32)),
         (DURATION_GROUP_TRIGGER_CHANCE, GDValue::Float(fade_time)),
-        (USING_PLAYER_COLOUR_1, GDValue::Bool(use_player_col_1)),
-        (USING_PLAYER_COLOUR_2, GDValue::Bool(use_player_col_2)),
-        (COLOUR_CHANNEL, GDValue::Short(channel.into())),
-        (OPACITY, GDValue::Float(opacity)),
-        (BLENDING_ENABLED, GDValue::Bool(blending)),
+        (
+            USING_PLAYER_COLOUR_1,
+            GDValue::Bool(colour_cfg.use_player_col_1),
+        ),
+        (
+            USING_PLAYER_COLOUR_2,
+            GDValue::Bool(colour_cfg.use_player_col_2),
+        ),
+        (COLOUR_CHANNEL, GDValue::Short(colour_cfg.channel.into())),
+        (OPACITY, GDValue::Float(colour_cfg.opacity)),
+        (BLENDING_ENABLED, GDValue::Bool(colour_cfg.blending)),
     ];
 
     if let Some(config) = copy_colour {
@@ -731,7 +864,10 @@ pub fn colour_trigger(
 
         properties.push((COPY_OPACITY, GDValue::Bool(config.copy_opacity)));
         properties.push((COPY_COLOUR_SPECS, GDValue::String(cfg_string)));
-        properties.push((COPY_COLOUR_FROM_CHANNEL, GDValue::ColourChannel(channel)));
+        properties.push((
+            COPY_COLOUR_FROM_CHANNEL,
+            GDValue::ColourChannel(config.original_ch),
+        ));
     }
 
     GDObject::new(TRIGGER_COLOUR, config, properties)
@@ -1185,6 +1321,7 @@ pub fn counter_object(
 /// * `result_rounding`: rounding mode of the final result; see [`RoundMode`] enum.
 /// * `id_sign`: sign mode of the result after both operands are evaluated; see [`SignMode`] enum.
 /// * `result_sign`: sign mode of the final result; see [`SignMode`] enum.
+#[allow(clippy::too_many_arguments)]
 pub fn item_edit(
     config: &GDObjConfig,
     operand1: Option<Item>,
@@ -1407,47 +1544,38 @@ pub fn on_death(config: &GDObjConfig, target_group: i16, activate_group: bool) -
 /// * `config`: General object options, such as position and scale
 /// * `particle_group`: Group that contains the particle objects
 /// * `position_group`: Group at which the particles will be spawned
-/// * `position_offsets`: (x, y) tuple for offsets from their original spawn location.
-///   Note: all particle objects spawn in the same position, regardless of their offsets within their group.
-/// * `position_variation`: (x, y) tuple for range of possible random positional variation.
-/// * `rotation_config`: (rotation, variation) tuple that describes the rotation of the particles + random offset range
-/// * `scale_config`: (scale, variation) tuple that describes the scale of the particles + random offset range
-/// * `match_rotation`: makes all of the particles in the group be rotated in the same direction.
+/// * `spawn_cfg`: Spawning configure for the particles themselves. See [`ParticleSpawnConfig`]
 pub fn spawn_particle(
     config: &GDObjConfig,
     particle_group: i16,
     position_group: i16,
-    position_offsets: Option<(i32, i32)>,
-    position_variation: Option<(i32, i32)>,
-    rotation_config: Option<(i32, i32)>,
-    scale_config: Option<(f64, f64)>,
-    match_rotation: bool,
+    spawn_cfg: ParticleSpawnConfig,
 ) -> GDObject {
     let mut properties = vec![
         (TARGET_ITEM, GDValue::Group(particle_group)),
         (TARGET_ITEM_2, GDValue::Group(position_group)),
         (
             MATCH_ROTATION_OF_SPAWNED_PARTICLES,
-            GDValue::Bool(match_rotation),
+            GDValue::Bool(spawn_cfg.match_rotation),
         ),
     ];
 
-    if let Some((x, y)) = position_offsets {
+    if let Some((x, y)) = spawn_cfg.position_offsets {
         properties.push((X_OFFSET_OF_SPAWNED_PARTICLES, GDValue::Int(x)));
         properties.push((Y_OFFSET_OF_SPAWNED_PARTICLES, GDValue::Int(y)));
     }
 
-    if let Some((x, y)) = position_variation {
+    if let Some((x, y)) = spawn_cfg.position_variation {
         properties.push((X_OFFSET_VARIATION_OF_SPAWNED_PARTICLES, GDValue::Int(x)));
         properties.push((Y_OFFSET_VARIATION_OF_SPAWNED_PARTICLES, GDValue::Int(y)));
     }
 
-    if let Some((rot, var)) = rotation_config {
+    if let Some((rot, var)) = spawn_cfg.rotation_config {
         properties.push((ROTATION_OF_SPAWNED_PARTICLES, GDValue::Int(rot)));
         properties.push((ROTATION_VARIATION_OF_SPAWNED_PARTICLES, GDValue::Int(var)));
     }
 
-    if let Some((scale, var)) = scale_config {
+    if let Some((scale, var)) = spawn_cfg.scale_config {
         properties.push((SCALE_OF_SPAWNED_PARTICLES, GDValue::Float(scale)));
         properties.push((SCALE_VARIATION_OF_SPAWNED_PARTICLES, GDValue::Float(var)));
     }
@@ -1524,13 +1652,8 @@ pub fn state_block(config: &GDObjConfig, state_on: i16, state_off: i16) -> GDObj
 /// Returns a collision trigger
 /// # Arguments
 /// * `config`: General object options, such as position and scale
-/// * `collider1`: ID of first collision block
-/// * `collider2`: ID of second collision block
+/// * `collider_cfg`: Settings for colliders for this collision detection. See [`ColliderConfig`]
 /// * `target_id`: ID of group that is activated when the two colliders collide
-/// * `collide_player1`: whether to check for collision with player 1 instead of collider 1
-/// * `collide_player2`: whether to check for collision with player 2 instead of collider 1.
-///   Does not override collision checking with player 1 if `collide_player1` is also true.
-/// * `collide_both_players`: whether to check for collision between the two players instead of two collision blocks
 /// * `activate_group`: whether this trigger will activate or deactivate the target group
 /// * `trigger_on_exit`: activates group when the two colliders' hitboxes stop overlapping after collision
 ///   instead of when they start colliding.
@@ -1539,12 +1662,8 @@ pub fn state_block(config: &GDObjConfig, state_on: i16, state_off: i16) -> GDObj
 #[inline(always)]
 pub fn collision_trigger(
     config: &GDObjConfig,
-    collider1: i16,
-    collider2: i16,
+    collider_cfg: ColliderConfig,
     target_id: i16,
-    collide_player1: bool,
-    collide_player2: bool,
-    collide_both_players: bool,
     activate_group: bool,
     trigger_on_exit: bool,
 ) -> GDObject {
@@ -1552,14 +1671,20 @@ pub fn collision_trigger(
         TRIGGER_COLLISION,
         config,
         vec![
-            (INPUT_ITEM_1, GDValue::Item(collider1)),
-            (INPUT_ITEM_2, GDValue::Item(collider2)),
+            (INPUT_ITEM_1, GDValue::Item(collider_cfg.collider1)),
+            (INPUT_ITEM_2, GDValue::Item(collider_cfg.collider2)),
             (TARGET_ITEM, GDValue::Item(target_id)),
-            (CONTROLLING_PLAYER_1, GDValue::Bool(collide_player1)),
-            (CONTROLLING_PLAYER_2, GDValue::Bool(collide_player2)),
+            (
+                CONTROLLING_PLAYER_1,
+                GDValue::Bool(collider_cfg.collide_player1),
+            ),
+            (
+                CONTROLLING_PLAYER_2,
+                GDValue::Bool(collider_cfg.collide_player2),
+            ),
             (
                 CONTROLLING_TARGET_PLAYER,
-                GDValue::Bool(collide_both_players),
+                GDValue::Bool(collider_cfg.collide_both_players),
             ),
             (ACTIVATE_GROUP, GDValue::Bool(activate_group)),
             (TRIGGER_ON_EXIT, GDValue::Bool(trigger_on_exit)),
@@ -1573,38 +1698,35 @@ pub fn collision_trigger(
 /// This condition is only checked once and never again
 /// # Arguments
 /// * `config`: General object options, such as position and scale
-/// * `collider1`: ID of first collision block
-/// * `collider2`: ID of second collision block
+/// * `collider_cfg`: Settings for colliders for this collision detection. See [`ColliderConfig`]
 /// * `true_id`: ID of group that is activated if the two colliders collide
 /// * `false_id`: ID of group that is activated if the two colliders do not collide
-/// * `collide_player1`: whether to check for collision with player 1 instead of collider 1
-/// * `collide_player2`: whether to check for collision with player 2 instead of collider 1.
-///   Does not override collision checking with player 1 if `collide_player1` is also true.
-/// * `collide_both_players`: whether to check for collision between the two players instead of two collision blocks
 #[inline(always)]
 pub fn instant_coll_trigger(
     config: &GDObjConfig,
-    collider1: i16,
-    collider2: i16,
+    collider_cfg: ColliderConfig,
     true_id: i16,
     false_id: i16,
-    collide_player1: bool,
-    collide_player2: bool,
-    collide_both_players: bool,
 ) -> GDObject {
     GDObject::new(
         TRIGGER_COLLISION,
         config,
         vec![
-            (INPUT_ITEM_1, GDValue::Item(collider1)),
-            (INPUT_ITEM_2, GDValue::Item(collider2)),
+            (INPUT_ITEM_1, GDValue::Item(collider_cfg.collider1)),
+            (INPUT_ITEM_2, GDValue::Item(collider_cfg.collider2)),
             (TARGET_ITEM, GDValue::Item(true_id)),
             (TARGET_ITEM_2, GDValue::Item(false_id)),
-            (CONTROLLING_PLAYER_1, GDValue::Bool(collide_player1)),
-            (CONTROLLING_PLAYER_2, GDValue::Bool(collide_player2)),
+            (
+                CONTROLLING_PLAYER_1,
+                GDValue::Bool(collider_cfg.collide_player1),
+            ),
+            (
+                CONTROLLING_PLAYER_2,
+                GDValue::Bool(collider_cfg.collide_player2),
+            ),
             (
                 CONTROLLING_TARGET_PLAYER,
-                GDValue::Bool(collide_both_players),
+                GDValue::Bool(collider_cfg.collide_both_players),
             ),
         ],
     )
