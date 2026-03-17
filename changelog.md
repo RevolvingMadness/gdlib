@@ -1,5 +1,17 @@
 # Changelog
 
+## Update 0.3.1
+* Fixes to repository structure
+    - added LICENSE
+    - improved README
+    - added workflows and lints
+    - added examples directory
+    - ignored Cargo.lock
+* Merged #3, which adds default constructors for all object IDs
+* Fixed crate according to the cargo clippy linter
+* Optimized `GDObjAttributes` to be a single u32 via bitflags
+* Added PRNG support in the `rand` module
+
 ## Update 0.3.0
 * Added various QOL improvements
     * Derived standard traits for structs and enums

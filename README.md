@@ -2,7 +2,7 @@
 A typesafe, rust library to interface with GD savefiles. It is intended to enable programmatic savefile operations, such as automatic level creation.
 
 Documentation can be found on [docs.rs](https://docs.rs/gdlib/latest/gdlib/)
-As of v0.3.0, GDLib is in active development.
+As of v0.3.1, GDLib is in active development.
 
 ## Repository structure
 - `.github`: workflows for GitHub.
