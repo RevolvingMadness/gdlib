@@ -178,7 +178,7 @@ fn advanced_random_predict() {
     let seed = 123;
     // predict outcome
     assert_eq!(
-        check_seed_advanced_random(seed, probabilities).unwrap(),
+        check_seed_advanced_random(seed, &probabilities).unwrap(),
         Group::Regular(1)
     );
 }
