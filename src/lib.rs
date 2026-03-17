@@ -5,6 +5,7 @@ pub mod core;
 pub mod deserialiser;
 pub mod gdlevel;
 pub mod gdobj;
+pub mod rand;
 pub mod serialiser;
 
 #[cfg(test)]

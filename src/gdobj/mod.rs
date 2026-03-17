@@ -182,6 +182,7 @@ pub enum GDObjPropType {
     Easing,
     EventsList,
     ColourChannel,
+    ProbabilitiesList,
     Toggle,
     Unknown,
 }
@@ -579,6 +580,25 @@ impl GDValue {
                     .map(|i| Event::from(parse!(i => i32)))
                     .collect(),
             ),
+            GDObjPropType::ProbabilitiesList => {
+                let mut curr_group = 0;
+                let mut idx = 0;
+                let mut tuples = vec![];
+                s.split('.').for_each(|c| {
+                    match idx % 2 == 0 {
+                        true => {
+                            // at even idx, so this is a group
+                            curr_group = parse!(c => i16)
+                        }
+                        false => {
+                            // at odd idx, so this is a chance
+                            tuples.push((curr_group, parse!(c => i32)));
+                        }
+                    };
+                    idx += 1
+                });
+                Self::ProbabilitiesList(SmallVec::from_vec(tuples))
+            }
             GDObjPropType::Group => Self::Group(parse!(s => i16)),
             GDObjPropType::Item => Self::Item(parse!(s => i16)),
             GDObjPropType::Text | GDObjPropType::Unknown => Self::String(s.to_owned()),

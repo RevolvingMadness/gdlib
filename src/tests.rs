@@ -4,10 +4,12 @@ use std::time::Instant;
 use crate::{
     gdlevel::Level,
     gdobj::{
-        Event, GDObjAttributes, GDObjConfig, MoveEasing,
+        Event, GDObjAttributes, GDObjConfig, Group, MoveEasing,
+        ids::{objects::TRIGGER_ADVANCED_RANDOM, properties::RANDOM_PROBABILITIES_LIST},
         misc::default_block,
         triggers::{self, DefaultMove, advanced_random_trigger, move_trigger},
     },
+    rand::check_seed_advanced_random,
 };
 
 fn benchmark<F: Fn() -> R, R>(name: &str, f: F) -> R {
@@ -156,4 +158,27 @@ fn event_trigger_test() {
         0,
         triggers::ExtraID2::All,
     ));
+}
+
+#[test]
+fn advanced_random_predict() {
+    let level = Level::from_gmd("test_gmds/advrand test.gmd").unwrap();
+    // find adv random trigger
+    let data = level.get_decrypted_data().unwrap();
+    let adv_rand = data
+        .objects
+        .iter()
+        .find(|o| o.id == TRIGGER_ADVANCED_RANDOM)
+        .unwrap();
+
+    // get probabilities table
+    let probabilities = adv_rand.get_property(RANDOM_PROBABILITIES_LIST).unwrap();
+
+    // set input params
+    let seed = 123;
+    // predict outcome
+    assert_eq!(
+        check_seed_advanced_random(seed, probabilities).unwrap(),
+        Group::Regular(1)
+    );
 }
