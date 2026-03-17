@@ -2,3 +2,4 @@
 GMDS/
 .vscode
 test_gmds/generated_*
+Cargo.lock
