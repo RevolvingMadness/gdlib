@@ -2,7 +2,7 @@
 A typesafe, rust library to interface with GD savefiles. It is intended to enable programmatic savefile operations, such as automatic level creation.
 
 Documentation can be found on [docs.rs](https://docs.rs/gdlib/latest/gdlib/).  
-As of v0.3.1, GDLib is in active development.
+As of v0.3.1, GDLib isgit  in active development.
 
 ## Repository structure
 - `.github`: workflows for GitHub.
@@ -44,6 +44,12 @@ fn main() -> Result<(), GDError> {
     Ok(())
 }
 ```
+
+# Acknowledgements
+This project was made with the generous assistance of existing documentation of GD:
+* [Wyliemaster's docs](https://wyliemaster.github.io/gddocs/#/)
+* [HDanke's GMDkit](https://github.com/UHDanke/gmdkit)
+* [Flowvix's property lists](https://flowvix.github.io/gd-info-explorer/)
 
 # License
 GDLib is distributed under the [MIT License](LICENSE).
