@@ -1,7 +1,7 @@
 # GDLib [![Crates.io](https://img.shields.io/crates/v/gdlib.svg)](https://crates.io/crates/gdlib)
 A typesafe, rust library to interface with GD savefiles. It is intended to enable programmatic savefile operations, such as automatic level creation.
 
-Documentation can be found on [docs.rs](https://docs.rs/gdlib/latest/gdlib/)
+Documentation can be found on [docs.rs](https://docs.rs/gdlib/latest/gdlib/).  
 As of v0.3.1, GDLib is in active development.
 
 ## Repository structure

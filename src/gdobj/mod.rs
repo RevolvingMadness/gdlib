@@ -1,6 +1,9 @@
 //! This module contains the GDObject struct, used for parsing to/from raw object strings
 //! This module also contains the GDObjConfig struct for creating new GDObjects
-use std::fmt::{Debug, Display, Write};
+use std::{
+    fmt::{Debug, Display, Write},
+    str::FromStr,
+};
 
 use crate::gdobj::{
     ids::properties::{
@@ -188,6 +191,7 @@ pub enum GDObjPropType {
     EventsList,
     ColourChannel,
     ProbabilitiesList,
+    SpawnRemapsList,
     Toggle,
     Unknown,
 }
@@ -357,6 +361,8 @@ pub enum GDValue {
     GroupList(smallvec::SmallVec<[i16; LIST_ALLOCSIZE]>),
     /// A list of probability pairs: (group id, relative chance). Used in the advanced random trigger
     ProbabilitiesList(smallvec::SmallVec<[(i16, i32); LIST_ALLOCSIZE]>),
+    /// A list of spawn remap pairs: (old id, new id)
+    SpawnRemapsList(smallvec::SmallVec<[(i16, i16); LIST_ALLOCSIZE]>),
     /// A [`MoveEasing`].
     Easing(MoveEasing),
     /// A [`ColourChannel`]. It may be any of the built in ones, or one with an ID in the range of \[1, 999]
@@ -568,6 +574,31 @@ macro_rules! parse {
     };
 }
 
+// helper function to parse strings of this formatting "k1.v1.k2.v2.etc.etc."
+fn parse_sibling_items<T, S>(s: &str) -> Vec<(T, S)>
+where
+    T: Default + FromStr + Copy + Clone,
+    S: Default + FromStr + Copy + Clone,
+{
+    let mut curr_group: T = T::default();
+    let mut idx = 0;
+    let mut tuples = vec![];
+    s.split('.').for_each(|c| {
+        match idx % 2 == 0 {
+            true => {
+                // at even idx, so this is a group
+                curr_group = parse!(c => T)
+            }
+            false => {
+                // at odd idx, so this is a chance
+                tuples.push((curr_group, parse!(c => S)));
+            }
+        };
+        idx += 1
+    });
+    tuples
+}
+
 impl GDValue {
     /// Converts input string to a variant of this enum based on the property type
     pub fn from(t: GDObjPropType, s: &str) -> Self {
@@ -586,23 +617,12 @@ impl GDValue {
                     .collect(),
             ),
             GDObjPropType::ProbabilitiesList => {
-                let mut curr_group = 0;
-                let mut idx = 0;
-                let mut tuples = vec![];
-                s.split('.').for_each(|c| {
-                    match idx % 2 == 0 {
-                        true => {
-                            // at even idx, so this is a group
-                            curr_group = parse!(c => i16)
-                        }
-                        false => {
-                            // at odd idx, so this is a chance
-                            tuples.push((curr_group, parse!(c => i32)));
-                        }
-                    };
-                    idx += 1
-                });
+                let tuples = parse_sibling_items::<i16, i32>(s);
                 Self::ProbabilitiesList(SmallVec::from_vec(tuples))
+            }
+            GDObjPropType::SpawnRemapsList => {
+                let tuples = parse_sibling_items::<i16, i16>(s);
+                Self::SpawnRemapsList(SmallVec::from_vec(tuples))
             }
             GDObjPropType::Group => Self::Group(parse!(s => i16)),
             GDObjPropType::Item => Self::Item(parse!(s => i16)),
@@ -633,6 +653,12 @@ impl GDValue {
     /// Converts a probabilities list to a [`GDValue`].
     pub fn from_prob_list(g: Vec<(i16, i32)>) -> Self {
         Self::ProbabilitiesList(SmallVec::from_vec(g))
+    }
+
+    #[inline(always)]
+    /// Converts a spawn remaps list to a [`GDValue`].
+    pub fn from_spawn_remaps(g: Vec<(i16, i16)>) -> Self {
+        Self::SpawnRemapsList(SmallVec::from_vec(g))
     }
 
     #[inline(always)]
@@ -700,6 +726,7 @@ impl Display for GDValue {
             GDValue::Group(v) | GDValue::Item(v) => write!(f, "{}", i_buf.format(*v)),
             GDValue::GroupList(v) => write!(f, "{}", fmt_intlist!(v, i_buf)),
             GDValue::ProbabilitiesList(v) => write!(f, "{}", fmt_inttuples!(v, i_buf)),
+            GDValue::SpawnRemapsList(v) => write!(f, "{}", fmt_inttuples!(v, i_buf)),
             GDValue::Int(v) => write!(f, "{}", i_buf.format(*v)),
             GDValue::Short(v) => write!(f, "{}", i_buf.format(*v)),
             GDValue::String(v) => write!(f, "{v}"),

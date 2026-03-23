@@ -153,6 +153,7 @@ pub static PROPERTY_TABLE: Map<u16, (&'static str, GDObjPropType)> = phf_map! {
     430u16 => ("Event listeners", GDObjPropType::EventsList),
     432u16 => ("Song channel", GDObjPropType::Unknown),
     441u16 => ("Spawn ordered", GDObjPropType::Bool),
+    442u16 => ("Spawn ID remaps", GDObjPropType::SpawnRemapsList),
     444u16 => ("No multiactivate platformer", GDObjPropType::Bool),
     445u16 => ("Claim touch?", GDObjPropType::Bool),
     446u16 => ("Object material", GDObjPropType::Unknown),
