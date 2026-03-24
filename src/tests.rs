@@ -182,3 +182,14 @@ fn advanced_random_predict() {
         Group::Regular(1)
     );
 }
+
+#[test]
+#[ignore]
+fn _temp_read_objs() {
+    let level = Level::from_gmd("GMDS/spawn remap.gmd").unwrap();
+    let data = level.get_decrypted_data().unwrap();
+
+    for (idx, obj) in data.objects.iter().enumerate() {
+        println!("{idx}: {obj:?}");
+    }
+}

@@ -21,7 +21,7 @@ pub fn next_seed_mut(seed: &mut u64) {
 /// Unlike the actual PRNG used in GD, this function *DOES NOT* automatically update the seed.
 #[inline(always)]
 pub fn fast_rand_bits(seed: u64) -> u64 {
-    (seed >> 16) & 0x7fff
+    (next_seed(seed) >> 16) & 0x7fff
 }
 
 /// Utility function which normalises result from [`fast_rand_bits`] to the range \[0.0, 1.0].
@@ -88,11 +88,11 @@ pub fn check_seed_advanced_random(seed: u64, probabilities: &GDValue) -> Option<
     // Iterate through all groups until the threshold is reached.
     // If the threshold is never reached, the last group is activated.
     for (group, chance) in prob_list.iter() {
+        cumulative_chance += chance;
         if cumulative_chance as f64 >= threshold {
             chosen_group = *group;
             break;
         }
-        cumulative_chance += chance;
     }
 
     Some(Group::Regular(chosen_group))

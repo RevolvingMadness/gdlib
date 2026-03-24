@@ -45,5 +45,11 @@ fn main() -> Result<(), GDError> {
 }
 ```
 
+# Acknowledgements
+This project was made with the generous assistance of existing documentation of GD:
+* [Wyliemaster's docs](https://wyliemaster.github.io/gddocs/#/)
+* [HDanke's GMDkit](https://github.com/UHDanke/gmdkit)
+* [Flowvix's property lists](https://flowvix.github.io/gd-info-explorer/)
+
 # License
 GDLib is distributed under the [MIT License](LICENSE).
