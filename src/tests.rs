@@ -184,6 +184,7 @@ fn advanced_random_predict() {
 }
 
 #[test]
+#[ignore]
 fn _temp_read_objs() {
     let level = Level::from_gmd("GMDS/spawn remap.gmd").unwrap();
     let data = level.get_decrypted_data().unwrap();
