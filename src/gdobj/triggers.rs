@@ -13,14 +13,15 @@ use crate::gdobj::{
             BG_EFFECT_OFF, BG_EFFECT_ON, BG_SPEED_CONFIG, CAMERA_GUIDE, COLLISION_BLOCK,
             COLLISION_STATE_BLOCK, COUNTER, DISABLE_PLAYER_TRAIL, ENABLE_PLAYER_TRAIL,
             MG_SPEED_CONFIG, START_POS, TOGGLE_BLOCK, TRIGGER_ADVANCED_RANDOM, TRIGGER_ANIMATE,
-            TRIGGER_CAMERA_ZOOM, TRIGGER_COLLISION, TRIGGER_COLOUR, TRIGGER_COUNT, TRIGGER_END,
-            TRIGGER_EVENT, TRIGGER_FOLLOW, TRIGGER_FOLLOW_PLAYER_Y, TRIGGER_GRAVITY,
-            TRIGGER_ITEM_COMPARE, TRIGGER_ITEM_EDIT, TRIGGER_LINK_VISIBLE,
-            TRIGGER_MIDDLEGROUND_CONFIG, TRIGGER_MOVE, TRIGGER_ON_DEATH, TRIGGER_PERSISTENT_ITEM,
-            TRIGGER_PLAYER_CONTROL, TRIGGER_PULSE, TRIGGER_RANDOM, TRIGGER_RESET_GROUP,
-            TRIGGER_REVERSE_GAMEPLAY, TRIGGER_ROTATION, TRIGGER_SCALE, TRIGGER_SHAKE,
-            TRIGGER_SPAWN, TRIGGER_SPAWN_PARTICLE, TRIGGER_STOP, TRIGGER_TIME,
-            TRIGGER_TIME_CONTROL, TRIGGER_TIME_EVENT, TRIGGER_TIME_WARP, TRIGGER_TOGGLE, UI_CONFIG,
+            TRIGGER_AREA_STOP, TRIGGER_CAMERA_ZOOM, TRIGGER_COLLISION, TRIGGER_COLOUR,
+            TRIGGER_COUNT, TRIGGER_END, TRIGGER_EVENT, TRIGGER_FOLLOW, TRIGGER_FOLLOW_PLAYER_Y,
+            TRIGGER_GRAVITY, TRIGGER_ITEM_COMPARE, TRIGGER_ITEM_EDIT, TRIGGER_LINK_VISIBLE,
+            TRIGGER_MIDDLEGROUND_CHANGE, TRIGGER_MIDDLEGROUND_CONFIG, TRIGGER_MOVE,
+            TRIGGER_ON_DEATH, TRIGGER_PERSISTENT_ITEM, TRIGGER_PLAYER_CONTROL, TRIGGER_PULSE,
+            TRIGGER_RANDOM, TRIGGER_RESET_GROUP, TRIGGER_REVERSE_GAMEPLAY, TRIGGER_ROTATION,
+            TRIGGER_SCALE, TRIGGER_SHAKE, TRIGGER_SPAWN, TRIGGER_SPAWN_PARTICLE, TRIGGER_STOP,
+            TRIGGER_TIME, TRIGGER_TIME_CONTROL, TRIGGER_TIME_EVENT, TRIGGER_TIME_WARP,
+            TRIGGER_TOGGLE, TRIGGER_TOUCH, UI_CONFIG,
         },
         properties::{
             ACTIVATE_GROUP, ANIMATION_ID, BLENDING_ENABLED, BLUE, CAMERA_GUIDE_PREVIEW_OPACITY,
@@ -35,8 +36,8 @@ use crate::gdobj::{
             FOLLOW_PLAYERS_X_MOVEMENT, FOLLOW_PLAYERS_Y_MOVEMENT, FOLLOW_SPEED, GRAVITY, GREEN,
             IGNORE_TIMEWARP, INPUT_ITEM_1, INPUT_ITEM_2, INSTANT_END, IS_DISABLED, IS_INTERACTABLE,
             IS_TIMER, LEFT_OPERATOR, LEFT_ROUND_MODE, LEFT_SIGN_MODE, LOCK_OBJECT_ROTATION,
-            MATCH_ROTATION_OF_SPAWNED_PARTICLES, MAX_FOLLOW_SPEED, MAXX_ID, MAXY_ID, MINX_ID,
-            MINY_ID, MODIFIER, MOVE_EASING, MOVE_UNITS_X, MOVE_UNITS_Y, MULTI_ACTIVATE,
+            MATCH_ROTATION_OF_SPAWNED_PARTICLES, MAX_FOLLOW_SPEED, MAXX_ID, MAXY_ID, MIDDLEGROUND,
+            MINX_ID, MINY_ID, MODIFIER, MOVE_EASING, MOVE_UNITS_X, MOVE_UNITS_Y, MULTI_ACTIVATE,
             MULTIACTIVATABLE_TIME_EVENT, NEW_X_SCALE, NEW_Y_SCALE, NO_END_EFFECTS,
             NO_END_SOUND_EFFECTS, NO_LEGACY_HSV, ONLY_MOVE, OPACITY, PAUSE_AT_TARGET_TIME,
             PULSE_DETAIL_COLOUR_ONLY, PULSE_FADE_IN_TIME, PULSE_FADE_OUT_TIME, PULSE_GROUP,
@@ -47,19 +48,21 @@ use crate::gdobj::{
             ROTATION_TARGET_ID, ROTATION_VARIATION_OF_SPAWNED_PARTICLES,
             SCALE_OF_SPAWNED_PARTICLES, SCALE_VARIATION_OF_SPAWNED_PARTICLES, SECOND_ITEM_TYPE,
             SECOND_MODIFIER, SECONDS_ONLY, SET_PERSISTENT_ITEM, SHAKE_INTERVAL, SHAKE_STRENGTH,
-            SILENT_MOVE, SMALL_STEP, SPAWN_DELAY, SPAWN_DELAY_VARIATION, SPAWN_ONLY, SPAWN_ORDERED,
-            SPECIAL_COUNTER_MODE, START_PAUSED_TIMER, START_TIME, STARTING_GAMEMODE,
-            STARTING_IN_DUAL_MODE, STARTING_IN_MINI_MODE, STARTING_IN_MIRROR_MODE, STARTING_SPEED,
-            STOP_MODE, STOP_PLAYER_JUMP, STOP_PLAYER_MOVEMENT, STOP_PLAYER_ROTATION,
-            STOP_PLAYER_SLIDING, STOP_TIME_COUNTER, TARGET_ALL_PERSISTENT_ITEMS, TARGET_CHANNEL,
-            TARGET_COUNT, TARGET_ITEM, TARGET_ITEM_2, TARGET_ITEM_TYPE, TARGET_MOVE_MODE,
-            TARGET_MOVE_MODE_AXIS_LOCK, TARGET_ORDER, TARGET_TIME, TARGET_TRANSITION_CHANNEL,
-            TIME_VALUE_MULTIPLER, TIMER, TIMEWARP_AMOUNT, TOLERANCE, TRIGGER_ON_EXIT,
-            USE_CONTROL_ID, USING_PLAYER_COLOUR_1, USING_PLAYER_COLOUR_2, X_MOVEMENT_MULTIPLIER,
-            X_OFFSET_OF_SPAWNED_PARTICLES, X_OFFSET_VARIATION_OF_SPAWNED_PARTICLES,
-            X_REFERENCE_IS_RELATIVE, X_REFERENCE_POSITION, XAXIS_FOLLOW_MOD, Y_MOVEMENT_MULTIPLIER,
-            Y_OFFSET_OF_SPAWNED_PARTICLES, Y_OFFSET_VARIATION_OF_SPAWNED_PARTICLES,
-            Y_REFERENCE_IS_RELATIVE, Y_REFERENCE_POSITION, YAXIS_FOLLOW_MOD,
+            SILENT_MOVE, SMALL_STEP, SPAWN_DELAY, SPAWN_DELAY_VARIATION, SPAWN_ID_REMAPS,
+            SPAWN_ONLY, SPAWN_ORDERED, SPECIAL_COUNTER_MODE, START_PAUSED_TIMER, START_TIME,
+            STARTING_GAMEMODE, STARTING_IN_DUAL_MODE, STARTING_IN_MINI_MODE,
+            STARTING_IN_MIRROR_MODE, STARTING_SPEED, STOP_MODE, STOP_PLAYER_JUMP,
+            STOP_PLAYER_MOVEMENT, STOP_PLAYER_ROTATION, STOP_PLAYER_SLIDING, STOP_TIME_COUNTER,
+            TARGET_ALL_PERSISTENT_ITEMS, TARGET_CHANNEL, TARGET_COUNT, TARGET_ITEM, TARGET_ITEM_2,
+            TARGET_ITEM_TYPE, TARGET_MOVE_MODE, TARGET_MOVE_MODE_AXIS_LOCK, TARGET_ORDER,
+            TARGET_TIME, TARGET_TRANSITION_CHANNEL, TIME_VALUE_MULTIPLER, TIMER, TIMEWARP_AMOUNT,
+            TOLERANCE, TOUCH_DUAL_MODE, TOUCH_HOLD_MODE, TOUCH_PLAYER_ONLY, TOUCH_TOGGLE_ONOFF,
+            TRIGGER_ON_EXIT, USE_CONTROL_ID, USING_PLAYER_COLOUR_1, USING_PLAYER_COLOUR_2,
+            X_MOVEMENT_MULTIPLIER, X_OFFSET_OF_SPAWNED_PARTICLES,
+            X_OFFSET_VARIATION_OF_SPAWNED_PARTICLES, X_REFERENCE_IS_RELATIVE, X_REFERENCE_POSITION,
+            XAXIS_FOLLOW_MOD, Y_MOVEMENT_MULTIPLIER, Y_OFFSET_OF_SPAWNED_PARTICLES,
+            Y_OFFSET_VARIATION_OF_SPAWNED_PARTICLES, Y_REFERENCE_IS_RELATIVE, Y_REFERENCE_POSITION,
+            YAXIS_FOLLOW_MOD,
         },
     },
 };
@@ -654,6 +657,38 @@ pub struct ColourTriggerConfig {
     pub use_player_col_1: bool,
     /// Use player colour 2 instead of the specified colour.
     pub use_player_col_2: bool,
+}
+
+#[repr(i32)]
+#[allow(missing_docs)]
+/// Enum for middle grounds
+pub enum MiddleGround {
+    None = 0,
+    SeasweptMountains = 1,
+    RockyMountains = 2,
+    Clouds = 3,
+}
+
+#[repr(i32)]
+/// Enum for an optional player target. Used in the touch trigger
+pub enum OptionalPlayerTarget {
+    /// Registers input from both players
+    None = 0,
+    /// Only registers input from player 1.
+    Player1 = 1,
+    /// Only registers input from player 2.
+    Player2 = 2,
+}
+
+#[repr(i32)]
+/// Enum for modes of activation in a touch trigger
+pub enum TouchToggle {
+    /// Alternates between activating and deactivating the target group
+    None = 0,
+    /// Activates target group only
+    ToggleOn = 1,
+    /// De-activates target group only
+    ToggleOff = 2,
 }
 
 /// Returns a move trigger object
@@ -1506,6 +1541,7 @@ pub fn spawn_trigger(
     reset_remap: bool,
     spawn_ordered: bool,
     preview_disable: bool,
+    spawn_remap: Vec<(i16, i16)>,
 ) -> GDObject {
     GDObject::new(
         TRIGGER_SPAWN,
@@ -1517,7 +1553,7 @@ pub fn spawn_trigger(
             (SPAWN_ORDERED, GDValue::Bool(spawn_ordered)),
             (SPAWN_DELAY_VARIATION, GDValue::Float(delay_variation)),
             (RESET_REMAP, GDValue::Bool(reset_remap)),
-            // todo: the list of remaps
+            (SPAWN_ID_REMAPS, GDValue::from_spawn_remaps(spawn_remap)),
         ],
     )
 }
@@ -1994,7 +2030,7 @@ pub fn ui_config_trigger(
 }
 
 /// Returns a rotate trigger
-/// # Arguments (TODO: move to rotation config)
+/// # Arguments
 /// * `config`: General object options, such as position and scale
 /// * `move_time`: Time to rotate the target
 /// * `rotation_cfg`: Rotation specifics. See [`RotationConfig`]
@@ -2190,6 +2226,59 @@ pub fn event_trigger(
     )
 }
 
+/// Returns a middle ground change trigger
+/// # Arguments
+/// * `config`: General object options, such as position and scale
+/// * `middleground`: Middleground to change to
+pub fn middle_ground_trigger(config: &GDObjConfig, middleground: MiddleGround) -> GDObject {
+    GDObject::new(
+        TRIGGER_MIDDLEGROUND_CHANGE,
+        config,
+        vec![(MIDDLEGROUND, GDValue::Int(middleground as i32))],
+    )
+}
+
+/// Returns a middle ground change trigger
+/// # Arguments
+/// * `config`: General object options, such as position and scale
+/// * `target_group`: Group that is activated when the trigger registers a click
+/// * `hold_mode`: Toggles target group on holding and releasing instead of clicking
+/// * `dual_mode`: Blocks 2nd player's clicks. Deprecated in favour of [`OptionalPlayerTarget::Player1`]
+/// * `toggle`: Toggles a specific activation mode. See [`TouchToggle`]
+/// * `target_player`: Only registers clicks from one player. See [`OptionalPlayerTarget`]
+pub fn touch_trigger(
+    config: &GDObjConfig,
+    target_group: i16,
+    hold_mode: bool,
+    dual_mode: bool,
+    toggle: TouchToggle,
+    target_player: OptionalPlayerTarget,
+) -> GDObject {
+    GDObject::new(
+        TRIGGER_TOUCH,
+        config,
+        vec![
+            (TARGET_ITEM, GDValue::Group(target_group)),
+            (TOUCH_HOLD_MODE, GDValue::Bool(hold_mode)),
+            (TOUCH_DUAL_MODE, GDValue::Bool(dual_mode)),
+            (TOUCH_TOGGLE_ONOFF, GDValue::Int(toggle as i32)),
+            (TOUCH_PLAYER_ONLY, GDValue::Int(target_player as i32)),
+        ],
+    )
+}
+
+/// Returns an area stop trigger
+/// # Arguments
+/// * `config`: General object options, such as position and scale
+/// * `effect_id`: Area effect that is stopped
+pub fn area_stop(config: &GDObjConfig, effect_id: i16) -> GDObject {
+    GDObject::new(
+        TRIGGER_AREA_STOP,
+        config,
+        vec![(TARGET_ITEM, GDValue::Short(effect_id))],
+    )
+}
+
 /* TODO: trigger constructors
  * Animation triggers
  * advanced follow
@@ -2220,10 +2309,8 @@ pub fn event_trigger(
  * Background triggers
  * switch bg
  * sdwitch ground
- * switch mg
  *
  * Item triggers
- * touch trigger
  * instant count trigger
  * pickup trigger
  *
@@ -2246,9 +2333,6 @@ pub fn event_trigger(
  * edit song trigger
  * sfx trigger
  * edit sfx trigger
- *
- * Time triggers
- * time trigger
  *
  * Misc.
  * bpm marker
