@@ -844,6 +844,7 @@ const OBJECT_NAMES: &[(i32, &str)] = &[
     (2068, "Trigger Advanced random"),
     (2900, "Trigger rotate gameplay"),
     (2900, "Trigger Middleground config"),
+    (3024, "Trigger Area stop"),
     (3031, "Trigger Middleground change"),
     (3600, "Trigger End"),
     (3604, "Trigger Event"),

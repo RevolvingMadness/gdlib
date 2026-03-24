@@ -13,9 +13,9 @@ use crate::gdobj::{
             BG_EFFECT_OFF, BG_EFFECT_ON, BG_SPEED_CONFIG, CAMERA_GUIDE, COLLISION_BLOCK,
             COLLISION_STATE_BLOCK, COUNTER, DISABLE_PLAYER_TRAIL, ENABLE_PLAYER_TRAIL,
             MG_SPEED_CONFIG, START_POS, TOGGLE_BLOCK, TRIGGER_ADVANCED_RANDOM, TRIGGER_ANIMATE,
-            TRIGGER_CAMERA_ZOOM, TRIGGER_COLLISION, TRIGGER_COLOUR, TRIGGER_COUNT, TRIGGER_END,
-            TRIGGER_EVENT, TRIGGER_FOLLOW, TRIGGER_FOLLOW_PLAYER_Y, TRIGGER_GRAVITY,
-            TRIGGER_ITEM_COMPARE, TRIGGER_ITEM_EDIT, TRIGGER_LINK_VISIBLE,
+            TRIGGER_AREA_STOP, TRIGGER_CAMERA_ZOOM, TRIGGER_COLLISION, TRIGGER_COLOUR,
+            TRIGGER_COUNT, TRIGGER_END, TRIGGER_EVENT, TRIGGER_FOLLOW, TRIGGER_FOLLOW_PLAYER_Y,
+            TRIGGER_GRAVITY, TRIGGER_ITEM_COMPARE, TRIGGER_ITEM_EDIT, TRIGGER_LINK_VISIBLE,
             TRIGGER_MIDDLEGROUND_CHANGE, TRIGGER_MIDDLEGROUND_CONFIG, TRIGGER_MOVE,
             TRIGGER_ON_DEATH, TRIGGER_PERSISTENT_ITEM, TRIGGER_PLAYER_CONTROL, TRIGGER_PULSE,
             TRIGGER_RANDOM, TRIGGER_RESET_GROUP, TRIGGER_REVERSE_GAMEPLAY, TRIGGER_ROTATION,
@@ -2241,7 +2241,7 @@ pub fn middle_ground_trigger(config: &GDObjConfig, middleground: MiddleGround) -
 /// Returns a middle ground change trigger
 /// # Arguments
 /// * `config`: General object options, such as position and scale
-/// * `target_group`:
+/// * `target_group`: Group that is activated when the trigger registers a click
 /// * `hold_mode`: Toggles target group on holding and releasing instead of clicking
 /// * `dual_mode`: Blocks 2nd player's clicks. Deprecated in favour of [`OptionalPlayerTarget::Player1`]
 /// * `toggle`: Toggles a specific activation mode. See [`TouchToggle`]
@@ -2264,6 +2264,18 @@ pub fn touch_trigger(
             (TOUCH_TOGGLE_ONOFF, GDValue::Int(toggle as i32)),
             (TOUCH_PLAYER_ONLY, GDValue::Int(target_player as i32)),
         ],
+    )
+}
+
+/// Returns an area stop trigger
+/// # Arguments
+/// * `config`: General object options, such as position and scale
+/// * `effect_id`: Area effect that is stopped
+pub fn area_stop(config: &GDObjConfig, effect_id: i16) -> GDObject {
+    GDObject::new(
+        TRIGGER_AREA_STOP,
+        config,
+        vec![(TARGET_ITEM, GDValue::Short(effect_id))],
     )
 }
 
@@ -2321,9 +2333,6 @@ pub fn touch_trigger(
  * edit song trigger
  * sfx trigger
  * edit sfx trigger
- *
- * Time triggers
- * time trigger
  *
  * Misc.
  * bpm marker
