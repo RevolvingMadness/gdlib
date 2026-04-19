@@ -56,7 +56,8 @@ use super::GDObject;
  */
 
 /// Maps object IDs to their default GD object strings (as the editor would produce them).  
-/// Sourced from HDanke's [default object strings](https://github.com/UHDanke/gmdkit/blob/main/src/gmdkit/defaults/objects.py)
+///
+/// Sourced from HDanke's [default object strings](https://github.com/UHDanke/gmdkit/blob/main/src/gmdkit/defaults/objects.py).
 /// This map only stores the unique object strings that are not shared
 pub static OBJECT_DEFAULTS_UNIQUE: Map<i32, &'static str> = phf_map! {
     29i32 => "1,29,2,0,3,0,36,1,7,255,8,255,9,255,10,0.5,35,1,23,1000;",
@@ -125,31 +126,38 @@ pub static OBJECT_DEFAULTS_UNIQUE: Map<i32, &'static str> = phf_map! {
 
 /// Returns the default [`GDObject`] for the given object ID.
 /// If the ID has a known entry in [`OBJECT_DEFAULTS`], it is parsed from that string
+#[must_use]
 pub fn default_object(id: i32) -> GDObject {
-    match OBJECT_DEFAULTS_UNIQUE.get(&id) {
-        Some(s) => GDObject::parse_str(s),
-        None => match check_common_suffix(id) {
-            Some(suf) => GDObject::parse_str(&format!("1,{id}{suf}")),
-            None => GDObject::new(id, &GDObjConfig::default(), vec![]),
-        },
+    if let Some(s) = OBJECT_DEFAULTS_UNIQUE.get(&id) {
+        return GDObject::parse_str(s);
     }
+
+    if let Some(suf) = check_common_suffix(id) {
+        return GDObject::parse_str(&format!("1,{id}{suf}"));
+    }
+
+    GDObject::new(id, &GDObjConfig::default(), vec![])
 }
 
 /// Returns the raw object string of a default object by ID.
+#[must_use]
 pub fn default_object_string(id: i32) -> String {
-    match OBJECT_DEFAULTS_UNIQUE.get(&id) {
-        Some(s) => s.to_string(),
-        None => match check_common_suffix(id) {
-            Some(suf) => format!("1,{id}{suf}"),
-            // unknown id defaults to minimal needed properties
-            None => format!("1,{id},2,0,3,0;"),
-        },
+    if let Some(s) = OBJECT_DEFAULTS_UNIQUE.get(&id).copied() {
+        return s.to_owned();
     }
+
+    if let Some(suf) = check_common_suffix(id) {
+        return format!("1,{id}{suf}");
+    }
+
+    // unknown id defaults to minimal needed properties
+    format!("1,{id},2,0,3,0;")
 }
 
 /// Returns a common suffix if a default object ID uses it.
 /// Example: IDs 1 through 9 all end with `,2,0,3,0;`
-pub fn check_common_suffix(id: i32) -> Option<&'static str> {
+#[must_use]
+pub const fn check_common_suffix(id: i32) -> Option<&'static str> {
     // this match statement is particularly messy, so line breaks are forced through comments
     // otherwise, rustfmt makes skyscrapers out of the match arms
     match id {

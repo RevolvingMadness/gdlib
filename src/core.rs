@@ -56,6 +56,7 @@ impl Display for GDError {
 }
 
 /// Returns path of CCLocalLevels.dat if it exists
+#[must_use]
 pub fn get_local_levels_path() -> Option<PathBuf> {
     if let Ok(local_appdata) = env::var("LOCALAPPDATA")
         && Path::new(&local_appdata).exists()
@@ -67,7 +68,8 @@ pub fn get_local_levels_path() -> Option<PathBuf> {
 }
 
 /// Replaces Robtop's plist format with actual plist tags; i.e. `<s>` becomes `<string>`
-pub fn proper_plist_tags(s: String) -> String {
+#[must_use]
+pub fn proper_plist_tags(s: &str) -> String {
     // replace gd plist with proper plist
     // using aho-corasick for single-pass instead of many .replace()s
     let find = &[
@@ -92,11 +94,12 @@ pub fn proper_plist_tags(s: String) -> String {
         "</real>",
     ];
     let ac = AhoCorasick::new(find).unwrap();
-    ac.replace_all(&s, replace)
+    ac.replace_all(s, replace)
 }
 
 /// Quick function for decoding base64 bytes
-#[inline(always)]
+#[inline]
+#[must_use]
 pub fn b64_decode<T: AsRef<[u8]> + Debug>(encoded: T) -> Vec<u8> {
     base64::engine::general_purpose::URL_SAFE
         .decode(encoded)
@@ -104,7 +107,8 @@ pub fn b64_decode<T: AsRef<[u8]> + Debug>(encoded: T) -> Vec<u8> {
 }
 
 /// Quick function for encoding base64 bytes
-#[inline(always)]
+#[inline]
+#[must_use]
 pub fn b64_encode(encoded: Vec<u8>) -> String {
     base64::engine::general_purpose::URL_SAFE.encode(encoded)
 }

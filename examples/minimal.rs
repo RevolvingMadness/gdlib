@@ -7,7 +7,7 @@ fn main() -> Result<(), GDError> {
     // Get level data, which is None only if it hasn't been initialized.
     if let Some(data) = level.get_decrypted_data_ref() {
         // Add group 42 to all objects
-        for obj in data.objects.iter_mut() {
+        for obj in &mut data.objects {
             obj.config.add_group(Group::Regular(42));
         }
     }

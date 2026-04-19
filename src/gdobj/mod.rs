@@ -1,6 +1,7 @@
-//! This module contains the GDObject struct, used for parsing to/from raw object strings
-//! This module also contains the GDObjConfig struct for creating new GDObjects
+//! This module contains the [`GDObject`] struct, used for parsing to/from raw object strings
+//! This module also contains the [`GDObjConfig`] struct for creating new [`GDObject`]s
 use std::{
+    cmp::Ordering,
     fmt::{Debug, Display, Write},
     str::FromStr,
 };
@@ -38,7 +39,7 @@ pub mod animation_ids {
 
     /// Animations for the big beast (chomper)
     #[repr(i32)]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum BigBeast {
         Bite = 0,
         Attack01 = 1,
@@ -48,7 +49,7 @@ pub mod animation_ids {
 
     /// Animations for the bat
     #[repr(i32)]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum Bat {
         Idle01 = 0,
         Idle02 = 1,
@@ -64,7 +65,7 @@ pub mod animation_ids {
 
     /// Animations for the spike ball
     #[repr(i32)]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum Spikeball {
         Idle01 = 0,
         Idle02 = 1,
@@ -78,7 +79,7 @@ pub mod animation_ids {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 /// Enum for animation IDs
 pub enum Anim {
     /// User-specified animation
@@ -92,11 +93,11 @@ pub enum Anim {
 }
 
 impl From<Anim> for i32 {
-    fn from(value: Anim) -> i32 {
+    fn from(value: Anim) -> Self {
         match value {
-            Anim::Bat(b) => b as i32,
-            Anim::BigBeast(b) => b as i32,
-            Anim::Spikeball(s) => s as i32,
+            Anim::Bat(b) => b as Self,
+            Anim::BigBeast(b) => b as Self,
+            Anim::Spikeball(s) => s as Self,
             Anim::Other(i) => i,
         }
     }
@@ -115,7 +116,8 @@ pub enum Item {
 
 impl Item {
     /// Returns this item's type
-    pub fn get_type(&self) -> ItemType {
+    #[must_use]
+    pub const fn get_type(&self) -> ItemType {
         match self {
             Self::Attempts => ItemType::Attempts,
             Self::Counter(_) => ItemType::Counter,
@@ -124,13 +126,17 @@ impl Item {
             Self::Timer(_) => ItemType::Timer,
         }
     }
-    #[inline(always)]
+
     /// Returns this item's type as an i32
-    pub fn get_type_as_i32(&self) -> i32 {
+    #[inline]
+    #[must_use]
+    pub const fn get_type_as_i32(&self) -> i32 {
         self.get_type() as i32
     }
+
     /// Returns this item's special mode if it has one
-    pub fn as_special_mode(&self) -> Option<CounterMode> {
+    #[must_use]
+    pub const fn as_special_mode(&self) -> Option<CounterMode> {
         match self {
             Self::Attempts => Some(CounterMode::Attempts),
             Self::MainTime => Some(CounterMode::MainTime),
@@ -138,14 +144,17 @@ impl Item {
             _ => None,
         }
     }
-    #[inline(always)]
+
     /// Returns this item's special mode if it has one as an i32
-    pub fn as_special_mode_i32(&self) -> i32 {
+    #[inline]
+    #[must_use]
+    pub const fn as_special_mode_i32(&self) -> i32 {
         self.as_special_mode().unwrap() as i32
     }
 
     /// Returns this item's ID
-    pub fn id(&self) -> i16 {
+    #[must_use]
+    pub const fn id(&self) -> i16 {
         match self {
             Self::Counter(c) => *c,
             Self::Timer(t) => *t,
@@ -357,7 +366,7 @@ pub enum GDValue {
     Group(i16),
     /// Any item ID, whcih is represented by an `i16`.
     Item(i16),
-    /// A list of group IDs as i16, which is stored in a SmallVec.
+    /// A list of group IDs as i16, which is stored in a [`SmallVec`].
     GroupList(smallvec::SmallVec<[i16; LIST_ALLOCSIZE]>),
     /// A list of probability pairs: (group id, relative chance). Used in the advanced random trigger
     ProbabilitiesList(smallvec::SmallVec<[(i16, i32); LIST_ALLOCSIZE]>),
@@ -376,7 +385,7 @@ pub enum GDValue {
 }
 
 #[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(missing_docs)]
 /// Enum for all events that the event trigger can listen for
 pub enum Event {
@@ -463,7 +472,7 @@ pub enum Event {
 }
 
 impl From<i32> for Event {
-    /// Converts the event ID to the variant of the [`Event`] enum. Default to TinyLanding.
+    /// Converts the event ID to the variant of the [`Event`] enum.
     fn from(i: i32) -> Self {
         match i {
             1 => Self::TinyLanding,
@@ -584,23 +593,22 @@ where
     let mut idx = 0;
     let mut tuples = vec![];
     s.split('.').for_each(|c| {
-        match idx % 2 == 0 {
-            true => {
-                // at even idx, so this is a group
-                curr_group = parse!(c => T)
-            }
-            false => {
-                // at odd idx, so this is a chance
-                tuples.push((curr_group, parse!(c => S)));
-            }
-        };
-        idx += 1
+        if idx % 2 == 0 {
+            // at even idx, so this is a group
+            curr_group = parse!(c => T);
+        } else {
+            // at odd idx, so this is a chance
+            tuples.push((curr_group, parse!(c => S)));
+        }
+
+        idx += 1;
     });
     tuples
 }
 
 impl GDValue {
     /// Converts input string to a variant of this enum based on the property type
+    #[must_use]
     pub fn from(t: GDObjPropType, s: &str) -> Self {
         match t {
             GDObjPropType::Bool => Self::Bool(s == "1"),
@@ -630,15 +638,16 @@ impl GDValue {
         }
     }
 
-    #[inline(always)]
     /// Converts a vector of [`Group`]s to a [`GDValue`]
-    pub fn from_group_list(g: Vec<Group>) -> Self {
+    #[inline]
+    #[must_use]
+    pub fn from_group_list(g: &[Group]) -> Self {
         Self::GroupList(SmallVec::from_vec(g.iter().map(|&g| g.id()).collect()))
     }
 
-    #[inline(always)]
     /// Converts a vector of parent [`Group`]s to a [`GDValue`]
-    pub fn parents_group_list(g: Vec<Group>) -> Self {
+    #[must_use]
+    pub fn parents_group_list(g: &[Group]) -> Self {
         Self::GroupList(SmallVec::from_vec(
             g.iter()
                 .filter_map(|g| match g {
@@ -649,26 +658,30 @@ impl GDValue {
         ))
     }
 
-    #[inline(always)]
     /// Converts a probabilities list to a [`GDValue`].
+    #[inline]
+    #[must_use]
     pub fn from_prob_list(g: Vec<(i16, i32)>) -> Self {
         Self::ProbabilitiesList(SmallVec::from_vec(g))
     }
 
-    #[inline(always)]
     /// Converts a spawn remaps list to a [`GDValue`].
+    #[inline]
+    #[must_use]
     pub fn from_spawn_remaps(g: Vec<(i16, i16)>) -> Self {
         Self::SpawnRemapsList(SmallVec::from_vec(g))
     }
 
-    #[inline(always)]
     /// Converts a raw colour channel value to a [`GDValue`].
+    #[inline]
+    #[must_use]
     pub fn colour_channel(s: &str) -> Self {
         Self::ColourChannel(ColourChannel::from(s.parse().unwrap_or(0)))
     }
 
-    #[inline(always)]
     /// Converts a raw zlayer value to a [`GDValue`].
+    #[inline]
+    #[must_use]
     pub fn zlayer(s: &str) -> Self {
         Self::ZLayer(ZLayer::from(s.parse().unwrap_or(0)))
     }
@@ -682,6 +695,7 @@ macro_rules! fmt_intlist {
             if idx != 0 {
                 items_str.push('.');
             }
+            #[allow(clippy::cast_lossless)]
             items_str.push_str($i_buf.format(*item as i32));
         }
         items_str
@@ -711,8 +725,8 @@ impl Display for GDValue {
         let mut d_buf = dtoa::Buffer::new();
 
         match self {
-            GDValue::Bool(b) => write!(f, "{}", if *b { '1' } else { '0' }),
-            GDValue::Toggle(b) => write!(
+            Self::Bool(b) => write!(f, "{}", if *b { '1' } else { '0' }),
+            Self::Toggle(b) => write!(
                 f,
                 "{}",
                 match b {
@@ -720,18 +734,18 @@ impl Display for GDValue {
                     false => "-1",
                 }
             ),
-            GDValue::ColourChannel(v) => write!(f, "{}", i_buf.format(Into::<i16>::into(*v))),
-            GDValue::Easing(v) => write!(f, "{}", i_buf.format(*v as i32)),
-            GDValue::Float(v) => write!(f, "{}", d_buf.format(*v)),
-            GDValue::Group(v) | GDValue::Item(v) => write!(f, "{}", i_buf.format(*v)),
-            GDValue::GroupList(v) => write!(f, "{}", fmt_intlist!(v, i_buf)),
-            GDValue::ProbabilitiesList(v) => write!(f, "{}", fmt_inttuples!(v, i_buf)),
-            GDValue::SpawnRemapsList(v) => write!(f, "{}", fmt_inttuples!(v, i_buf)),
-            GDValue::Int(v) => write!(f, "{}", i_buf.format(*v)),
-            GDValue::Short(v) => write!(f, "{}", i_buf.format(*v)),
-            GDValue::String(v) => write!(f, "{v}"),
-            GDValue::ZLayer(v) => write!(f, "{}", i_buf.format(*v as i32)),
-            GDValue::Events(evts) => write!(f, "{}", fmt_intlist!(evts, i_buf)),
+            Self::ColourChannel(v) => write!(f, "{}", i_buf.format(Into::<i16>::into(*v))),
+            Self::Easing(v) => write!(f, "{}", i_buf.format(*v as i32)),
+            Self::Float(v) => write!(f, "{}", d_buf.format(*v)),
+            Self::Group(v) | Self::Item(v) => write!(f, "{}", i_buf.format(*v)),
+            Self::GroupList(v) => write!(f, "{}", fmt_intlist!(v, i_buf)),
+            Self::ProbabilitiesList(v) => write!(f, "{}", fmt_inttuples!(v, i_buf)),
+            Self::SpawnRemapsList(v) => write!(f, "{}", fmt_inttuples!(v, i_buf)),
+            Self::Int(v) => write!(f, "{}", i_buf.format(*v)),
+            Self::Short(v) => write!(f, "{}", i_buf.format(*v)),
+            Self::String(v) => write!(f, "{v}"),
+            Self::ZLayer(v) => write!(f, "{}", i_buf.format(*v as i32)),
+            Self::Events(evts) => write!(f, "{}", fmt_intlist!(evts, i_buf)),
         }
     }
 }
@@ -878,8 +892,10 @@ pub struct GDObject {
 
 impl Display for GDObject {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let group_str = match !self.config.groups.is_empty() {
-            true => &format!(
+        let group_str = if self.config.groups.is_empty() {
+            ""
+        } else {
+            &format!(
                 " with groups: {}",
                 self.config
                     .groups
@@ -887,19 +903,18 @@ impl Display for GDObject {
                     .map(|g| format!("{}", g.id()))
                     .collect::<Vec<String>>()
                     .join(", ")
-            ),
-            false => "",
+            )
         };
 
         let mut trigger_conf_str = String::new();
         if self.config.trigger_cfg.spawnable || self.config.trigger_cfg.touchable {
             if self.config.trigger_cfg.multitriggerable {
-                trigger_conf_str += "Multi"
+                trigger_conf_str += "Multi";
             }
             if self.config.trigger_cfg.touchable {
-                trigger_conf_str += "touchable "
+                trigger_conf_str += "touchable ";
             } else if self.config.trigger_cfg.spawnable {
-                trigger_conf_str += "spawnable "
+                trigger_conf_str += "spawnable ";
             }
         }
 
@@ -921,7 +936,7 @@ impl Debug for GDObject {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut property_str = String::with_capacity(self.properties.len() * 32);
 
-        for (property, value) in self.properties.iter() {
+        for (property, value) in &self.properties {
             let desc = lookup::PROPERTY_TABLE.get(property).map(|p| p.0);
             if let Some(d) = desc {
                 write!(property_str, "\n    - {d}: {value:?}")
@@ -940,22 +955,22 @@ impl Debug for GDObject {
 }
 
 impl GDObject {
-    /// Parses raw object string to GDObject
-    pub fn parse_str(s: &str) -> GDObject {
-        let mut obj = GDObject {
+    /// Parses raw object string to [`GDObject`]
+    pub fn parse_str(s: &str) -> Self {
+        let mut obj = Self {
             id: 1,
             config: GDObjConfig::default(),
             properties: vec![],
         };
 
-        let mut iter = s.trim_end_matches(';').split(",");
+        let mut iter = s.trim_end_matches(';').split(',');
         while let (Some(idx), Some(val)) = (iter.next(), iter.next()) {
-            let idx_u16 = match idx.parse::<u16>() {
-                Ok(n) => n,
-                Err(_) => match idx[2..].parse::<u16>() {
-                    Ok(n) => n + 10_000,
-                    Err(_) => 65535,
-                },
+            let idx_u16 = if let Ok(n) = idx.parse::<u16>() {
+                n
+            } else if let Ok(n) = idx[2..].parse::<u16>() {
+                n + 10_000
+            } else {
+                65535
             };
 
             match idx_u16 {
@@ -969,7 +984,7 @@ impl GDObject {
                 GROUPS => {
                     obj.config.add_groups(
                         val.trim_matches('"')
-                            .split(".")
+                            .split('.')
                             .filter_map(|g| g.parse::<i16>().ok())
                             .map(Group::Regular)
                             .collect::<Vec<Group>>(),
@@ -980,10 +995,10 @@ impl GDObject {
                 EDITOR_LAYER_1 => obj.config.editor_layers.0 = parse!(val => i16),
                 EDITOR_LAYER_2 => obj.config.editor_layers.1 = parse!(val => i16),
                 OBJECT_COLOUR => {
-                    obj.config.colour_channels.0 = ColourChannel::from(parse!(val => i16))
+                    obj.config.colour_channels.0 = ColourChannel::from(parse!(val => i16));
                 }
                 SECONDARY_COLOUR => {
-                    obj.config.colour_channels.1 = ColourChannel::from(parse!(val => i16))
+                    obj.config.colour_channels.1 = ColourChannel::from(parse!(val => i16));
                 }
                 Z_LAYER => obj.config.z_layer = ZLayer::from(parse!(val => i32)),
                 Z_ORDER => obj.config.z_order = parse!(val => i32),
@@ -1090,7 +1105,7 @@ impl GDObject {
                     // add groups method handles deduping
                     obj.config.add_groups(
                         val.trim_matches('"')
-                            .split(".")
+                            .split('.')
                             .filter_map(|g| g.parse::<i16>().ok())
                             .map(Group::Parent)
                             .collect::<Vec<Group>>(),
@@ -1131,9 +1146,10 @@ impl GDObject {
     }
 
     /// Returns this object as a property string
+    #[must_use]
     pub fn serialise_to_string(&self) -> String {
         let mut properties_string = String::with_capacity(self.properties.len() * 8);
-        for (idx, val) in self.properties.iter() {
+        for (idx, val) in &self.properties {
             let (pref, id) = if *idx < 10_000 {
                 ("", *idx)
             } else {
@@ -1145,41 +1161,49 @@ impl GDObject {
         let config_str = self.config.serialise_to_string();
 
         let raw_str = format!("1,{}{config_str}{properties_string}", self.id);
-        raw_str.replace("\"", "") + ";"
+        raw_str.replace('"', "") + ";"
     }
 
     /// Returns this object's name
+    #[must_use]
     pub fn get_name(&self) -> String {
         OBJECT_NAMES
             .iter()
-            .find(|&o| o.0 == self.id)
-            .unwrap_or(&(0, format!("Object {}", self.id).as_str()))
-            .1
-            .to_string()
+            .find_map(|(id, name)| {
+                if *id == self.id {
+                    Some((*name).to_owned())
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_else(|| format!("Object {}", self.id))
     }
 
-    /// Creates a new GDObject from ID, config, and extra proerties
-    #[inline(always)]
+    /// Creates a new [`GDObject`] from ID, config, and extra proerties
+    #[inline]
+    #[must_use]
     pub fn new(id: i32, config: &GDObjConfig, properties: Vec<(u16, GDValue)>) -> Self {
-        GDObject {
+        Self {
             id,
             config: config.clone(),
             properties,
         }
     }
 
-    #[inline]
     /// Creates a default object from the specified ID
+    #[inline]
+    #[must_use]
     pub fn default_from_id(id: i32) -> Self {
         defaults::default_object(id)
     }
 
-    #[inline(always)]
-    fn get_attr_as_gdvalue(&self, attr: GDObjAttributes) -> GDValue {
+    #[inline]
+    const fn get_attr_as_gdvalue(&self, attr: GDObjAttributes) -> GDValue {
         GDValue::Bool(self.config.get_attribute_flag(attr))
     }
 
     /// Fetches a property from this object's configuration
+    #[must_use]
     pub fn get_property(&self, p: u16) -> Option<GDValue> {
         match p {
             // one of the most fascinating matches of all time
@@ -1188,7 +1212,7 @@ impl GDObject {
             3 => Some(GDValue::Float(self.config.pos.1)),
             6 => Some(GDValue::Float(self.config.angle)),
             11 => Some(GDValue::Bool(self.config.trigger_cfg.touchable)),
-            57 => Some(GDValue::from_group_list(self.config.groups.clone())),
+            57 => Some(GDValue::from_group_list(&self.config.groups)),
             62 => Some(GDValue::Bool(self.config.trigger_cfg.spawnable)),
             87 => Some(GDValue::Bool(self.config.trigger_cfg.multitriggerable)),
             128 => Some(GDValue::Float(self.config.scale.0)),
@@ -1242,7 +1266,7 @@ impl GDObject {
 }
 
 /// Trigger config, used for defining general properties of a trigger object
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TriggerConfig {
     /// is touch triggerable?
     pub touchable: bool,
@@ -1261,62 +1285,47 @@ pub enum Group {
 }
 
 impl Ord for Group {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> Ordering {
         // check ids first
         // check the types only if equal
         match self.id().cmp(&other.id()) {
-            std::cmp::Ordering::Equal => self.get_type().cmp(&other.get_type()),
+            Ordering::Equal => self.get_type().cmp(&other.get_type()),
             o => o,
         }
     }
 }
 
 impl PartialOrd for Group {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(missing_docs)]
 /// Group type enum
 pub enum GroupType {
-    Regular,
     Parent,
-}
-
-impl Ord for GroupType {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        if self == other {
-            std::cmp::Ordering::Equal
-        } else if *self == Self::Regular {
-            // other is parent, so is less
-            std::cmp::Ordering::Greater
-        } else {
-            std::cmp::Ordering::Less
-        }
-    }
-}
-
-impl PartialOrd for GroupType {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
+    #[default]
+    Regular,
 }
 
 impl Group {
     /// Returns this group's ID
-    pub fn id(&self) -> i16 {
+    #[must_use]
+    pub const fn id(&self) -> i16 {
         match self {
             Self::Regular(id) => *id,
             Self::Parent(id) => *id,
         }
     }
+
     /// Returns this group's type
-    pub fn get_type(&self) -> GroupType {
+    #[must_use]
+    pub const fn get_type(&self) -> GroupType {
         match self {
-            Group::Parent(_) => GroupType::Parent,
-            Group::Regular(_) => GroupType::Regular,
+            Self::Parent(_) => GroupType::Parent,
+            Self::Regular(_) => GroupType::Regular,
         }
     }
 }
@@ -1360,7 +1369,7 @@ pub struct GDObjConfig {
 
 impl Default for GDObjConfig {
     fn default() -> Self {
-        GDObjConfig {
+        Self {
             pos: (0.0, 0.0),
             scale: (1.0, 1.0),
             angle: 0.0,
@@ -1384,12 +1393,14 @@ impl Default for GDObjConfig {
 
 impl GDObjConfig {
     /// Alias for default
-    #[inline(always)]
+    #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Serialises this config struct to a string
+    #[must_use]
     pub fn serialise_to_string(&self) -> String {
         let mut properties = String::with_capacity(64);
         let _ = write!(
@@ -1450,7 +1461,7 @@ impl GDObjConfig {
                 .collect::<Vec<String>>()
                 .join(".");
             properties.push_str(group_str);
-        };
+        }
 
         properties
     }
@@ -1462,175 +1473,228 @@ impl GDObjConfig {
     }
 
     /// Sets groups of this object
-    #[inline(always)]
+    #[inline]
+    #[must_use]
     pub fn groups<T: IntoIterator<Item = I>, I: Into<Group>>(mut self, groups: T) -> Self {
-        self.groups = groups.into_iter().map(|g| g.into()).collect();
+        self.groups = groups.into_iter().map(Into::into).collect();
         self.dedup_groups();
         self
     }
+
     /// Adds groups to this object's groups
-    #[inline(always)]
+    #[inline]
     pub fn add_groups<T: AsRef<[Group]>>(&mut self, groups: T) {
         self.groups.extend_from_slice(groups.as_ref());
         self.dedup_groups();
     }
+
     /// Adds group to this object's groups
-    #[inline(always)]
+    #[inline]
     pub fn add_group(&mut self, group: Group) {
         self.groups.push(group);
         self.dedup_groups();
     }
+
     /// Removes this group from this object's groups
-    #[inline(always)]
+    #[inline]
     pub fn remove_group(&mut self, group: Group) {
         if let Some(idx) = self.groups.iter().position(|&g| g == group) {
             self.groups.swap_remove(idx);
         }
     }
+
     /// Clears all groups from this object
-    #[inline(always)]
+    #[inline]
     pub fn clear_groups(&mut self) {
         self.groups.clear();
     }
+
     /// Sets x position of this object
-    #[inline(always)]
-    pub fn x(mut self, x: f64) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn x(mut self, x: f64) -> Self {
         self.pos.0 = x;
+
         self
     }
+
     /// Sets y position of this object
-    #[inline(always)]
-    pub fn y(mut self, y: f64) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn y(mut self, y: f64) -> Self {
         self.pos.1 = y;
+
         self
     }
 
     /// Applies a translation to this object's position
-    pub fn translate(mut self, x: f64, y: f64) -> Self {
+    #[must_use]
+    pub const fn translate(mut self, x: f64, y: f64) -> Self {
         self.pos.0 += x;
         self.pos.1 += y;
+
         self
     }
 
     /// Sets x and y position of this object
-    #[inline(always)]
-    pub fn pos(mut self, x: f64, y: f64) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn pos(mut self, x: f64, y: f64) -> Self {
         self.pos = (x, y);
+
         self
     }
+
     /// Sets x scale of this object
-    #[inline(always)]
-    pub fn xscale(mut self, xscale: f64) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn xscale(mut self, xscale: f64) -> Self {
         self.scale.0 = xscale;
+
         self
     }
+
     /// Sets y scale of this object
-    #[inline(always)]
-    pub fn yscale(mut self, yscale: f64) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn yscale(mut self, yscale: f64) -> Self {
         self.scale.1 = yscale;
+
         self
     }
+
     /// Sets x and y scale of this object
-    #[inline(always)]
-    pub fn scale(mut self, x: f64, y: f64) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn scale(mut self, x: f64, y: f64) -> Self {
         self.scale = (x, y);
         self
     }
+
     /// Sets rotation angle of this object
-    #[inline(always)]
-    pub fn angle(mut self, angle: f64) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn angle(mut self, angle: f64) -> Self {
         self.angle = angle;
         self
     }
+
     /// Makes this object touch triggerable
-    #[inline(always)]
-    pub fn touchable(mut self, touchable: bool) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn touchable(mut self, touchable: bool) -> Self {
         self.trigger_cfg.touchable = touchable;
         self
     }
+
     /// Makes this object spawn triggerable
-    #[inline(always)]
-    pub fn spawnable(mut self, spawnable: bool) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn spawnable(mut self, spawnable: bool) -> Self {
         self.trigger_cfg.spawnable = spawnable;
         self
     }
+
     /// Makes this object multi-triggerable
-    #[inline(always)]
-    pub fn multitrigger(mut self, multi: bool) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn multitrigger(mut self, multi: bool) -> Self {
         self.trigger_cfg.multitriggerable = multi;
         self
     }
+
     /// Sets this object's base colour channel
-    #[inline(always)]
-    pub fn set_base_colour(mut self, channel: ColourChannel) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn set_base_colour(mut self, channel: ColourChannel) -> Self {
         self.colour_channels.0 = channel;
         self
     }
+
     /// Sets this object's detail colour channel
-    #[inline(always)]
-    pub fn set_detail_colour(mut self, channel: ColourChannel) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn set_detail_colour(mut self, channel: ColourChannel) -> Self {
         self.colour_channels.1 = channel;
         self
     }
+
     /// Sets this object's Z-layer
-    #[inline(always)]
-    pub fn set_z_layer(mut self, z: ZLayer) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn set_z_layer(mut self, z: ZLayer) -> Self {
         self.z_layer = z;
         self
     }
+
     /// Sets this object's Z-order
-    #[inline(always)]
-    pub fn set_z_order(mut self, z: i32) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn set_z_order(mut self, z: i32) -> Self {
         self.z_order = z;
         self
     }
+
     /// Sets editor layer 1 of this object
-    #[inline(always)]
-    pub fn editor_layer_1(mut self, l: i16) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn editor_layer_1(mut self, l: i16) -> Self {
         self.editor_layers.0 = l;
         self
     }
+
     /// Sets editor layer 2 of this object
-    #[inline(always)]
-    pub fn editor_layer_2(mut self, l: i16) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn editor_layer_2(mut self, l: i16) -> Self {
         self.editor_layers.1 = l;
         self
     }
+
     /// Sets this object's material id
-    #[inline(always)]
-    pub fn set_material_id(mut self, material_id: i16) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn set_material_id(mut self, material_id: i16) -> Self {
         self.material_id = material_id;
         self
     }
+
     /// Sets this object's enter effect channel
-    #[inline(always)]
-    pub fn set_enter_channel(mut self, channel: i16) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn set_enter_channel(mut self, channel: i16) -> Self {
         self.enter_effect_channel = channel;
         self
     }
+
     /// Sets this object's control ID
-    #[inline(always)]
-    pub fn set_control_id(mut self, id: i16) -> Self {
+    #[inline]
+    #[must_use]
+    pub const fn set_control_id(mut self, id: i16) -> Self {
         self.control_id = id;
         self
     }
 
-    /// Gets the value of a set attribute flag.  
+    /// Gets the value of a set attribute flag.
+    ///
     /// The flag is only true if it has been set as such. Unset flags return false.
-    pub fn get_attribute_flag(&self, flag: GDObjAttributes) -> bool {
+    #[must_use]
+    pub const fn get_attribute_flag(&self, flag: GDObjAttributes) -> bool {
         self.attributes.contains(flag)
     }
 
     /// Sets the attribute of the specified flag. Function is useable in builder syntax.
+    #[must_use]
     pub fn set_attribute_flag(mut self, flag: GDObjAttributes, toggle: bool) -> Self {
         self.attributes.set(flag, toggle);
+
         self
     }
 }
 
 bitflags! {
     /// Common attributes container struct
-    #[derive(Debug, Clone, PartialEq, Default, Eq, Hash)]
+    #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
     // #[allow(missing_docs)] won't work here for some odd reason
     pub struct GDObjAttributes: u32 {
         /// @nodoc
@@ -1685,13 +1749,15 @@ bitflags! {
 }
 
 impl GDObjAttributes {
-    #[inline(always)]
+    #[inline]
     /// Makes a default instance of this object
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Serialises this object to a string
+    #[must_use]
     pub fn get_property_str(&self) -> String {
         let fields = [
             (DONT_FADE, Self::dont_fade),
@@ -1719,6 +1785,7 @@ impl GDObjAttributes {
             (CENTER_EFFECT, Self::center_effect),
             (REVERSES_GAMEPLAY, Self::reverse),
         ];
+
         let mut properties_str = String::with_capacity(6 * fields.len());
 
         for (id, flag) in fields {

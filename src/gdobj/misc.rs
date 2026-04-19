@@ -14,7 +14,8 @@ use crate::gdobj::{
 /// Returns a default block object.
 /// # Arguments
 /// `config`: Object config
-#[inline(always)]
+#[inline]
+#[must_use]
 pub fn default_block(config: &GDObjConfig) -> GDObject {
     GDObject::new(DEFAULT_BLOCK, config, vec![])
 }

@@ -15,11 +15,13 @@ use crate::{
 fn benchmark<F: Fn() -> R, R>(name: &str, f: F) -> R {
     let start = Instant::now();
     let result = f();
+
     println!(
         "{name}: {:.3}ms",
         start.elapsed().as_micros() as f64 / 1000.0
     );
-    return result;
+
+    result
 }
 
 #[test]
@@ -126,8 +128,8 @@ fn ref_vs_copy_benchmark() {
         }
     }
     let objs = level.get_decrypted_data().unwrap().objects.len();
-    let avg_copy_time = copy_time as f64 / (1_000 * count) as f64;
-    let avg_ref_time = ref_time as f64 / (1_000 * count) as f64;
+    let avg_copy_time = copy_time as f64 / f64::from(1_000 * count);
+    let avg_ref_time = ref_time as f64 / f64::from(1_000 * count);
 
     println!(
         "Objects: {objs}; {count} tests\nAverage copy time: {:.3}us\nAverage ref time: {:.3}us\nAverage copy time per object: {:.3}us\nAverage ref time per object: {:.3}us",
@@ -181,15 +183,4 @@ fn advanced_random_predict() {
         check_seed_advanced_random(seed, &probabilities).unwrap(),
         Group::Regular(1)
     );
-}
-
-#[test]
-#[ignore]
-fn _temp_read_objs() {
-    let level = Level::from_gmd("GMDS/spawn remap.gmd").unwrap();
-    let data = level.get_decrypted_data().unwrap();
-
-    for (idx, obj) in data.objects.iter().enumerate() {
-        println!("{idx}: {obj:?}");
-    }
 }

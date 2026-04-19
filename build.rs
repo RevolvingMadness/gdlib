@@ -6,7 +6,7 @@ use syn::{Expr, ExprArray, ExprLit, ExprTuple, Item, Lit};
 // all of the currently implemented ids for objects and properties as consts.
 // currently broken due to `kAXX` properties
 
-fn to_const_name(s: String) -> String {
+fn to_const_name(s: &str) -> String {
     let mut seen_underscore = false;
     s.chars()
         .map(|c| {
@@ -37,7 +37,7 @@ fn handle_tuple(buffer: &mut String, tuple: ExprTuple) {
             }
         }
     }
-    let const_name = to_const_name(name);
+    let const_name = to_const_name(&name);
     writeln!(buffer, "    pub const {const_name}: i32 = {id};").unwrap();
 }
 
@@ -80,7 +80,7 @@ fn main() {
             let id = split.next().unwrap();
             let mut tuple_split = split.next().unwrap().split(", ");
             let desc = tuple_split.next().unwrap();
-            let const_name = to_const_name(desc.to_string());
+            let const_name = to_const_name(desc);
 
             writeln!(
                 properties_out_str,

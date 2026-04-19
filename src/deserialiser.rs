@@ -34,11 +34,13 @@ pub fn decompress(mut data: Vec<u8>) -> Result<Vec<u8>, GDError> {
 /// * `data`: encrypted payload
 ///
 /// Returns the raw file contents as a `Vec<u8>`
-#[inline(always)]
+#[inline]
+#[must_use]
 pub fn decrypt(mut data: Vec<u8>) -> Vec<u8> {
     for c in &mut data {
-        *c ^= 11;
+        *c ^= 0xb;
     }
+
     decompress(data).unwrap()
 }
 
@@ -48,7 +50,8 @@ pub fn decode_levels_to_string() -> Result<String, GDError> {
         Ok(v) => v,
         Err(e) => return Err(GDError::Io(e)),
     };
+
     let data = decrypt(savefile);
 
-    Ok(String::from_utf8(data.to_vec()).unwrap())
+    Ok(String::from_utf8(data).unwrap())
 }
